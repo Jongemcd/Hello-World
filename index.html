@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hollister ULC - Global Locations</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0e27;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease-out;
+        }
+
+        #loadingScreen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .dna-container {
+            width: 200px;
+            height: 300px;
+            position: relative;
+            margin-bottom: 40px;
+        }
+
+        .dna-strand {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .helix {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #00ff88, #00aa55);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
+        }
+
+        @keyframes dnaRotate {
+            0% {
+                transform: rotateX(0deg) rotateZ(0deg);
+            }
+            100% {
+                transform: rotateX(360deg) rotateZ(360deg);
+            }
+        }
+
+        .dna-strand {
+            animation: dnaRotate 3s linear infinite;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .loading-text {
+            font-size: 24px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.6;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .loading-subtext {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #00ff88;
+            letter-spacing: 1px;
+        }
+
+        #canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .info-panel {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .info-panel.visible {
+            opacity: 1;
+        }
+
+        .info-panel h3 {
+            color: #00ff88;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .info-panel p {
+            font-size: 12px;
+            line-height: 1.6;
+            color: #ccc;
+        }
+
+        .stats-panel {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            font-size: 12px;
+            min-width: 200px;
+        }
+
+        .stats-panel.visible {
+            opacity: 1;
+        }
+
+        .stats-panel .stat {
+            margin: 8px 0;
+            color: #00ff88;
+        }
+
+        .stats-panel .stat-label {
+            color: #999;
+        }
+
+        .destination-marker {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(255, 50, 50, 0.9);
+            padding: 15px 25px;
+            border-radius: 25px;
+            border: 2px solid #ff3232;
+            color: #fff;
+            font-weight: bold;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            animation: pulse-red 1s ease-in-out infinite;
+        }
+
+        .destination-marker.visible {
+            opacity: 1;
+        }
+
+        @keyframes pulse-red {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(255, 50, 50, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(255, 50, 50, 0.8);
+            }
+        }
+
+        .title {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff88;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            letter-spacing: 2px;
+        }
+
+        .title.visible {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingScreen">
+        <div class="dna-container">
+            <div class="dna-strand" id="dnaHelix"></div>
+        </div>
+        <div class="loading-text">INITIALIZING NETWORK</div>
+        <div class="loading-subtext">ESTABLISHING GLOBAL CONNECTIONS</div>
+    </div>
+
+    <div class="title" id="title">HOLLISTER ULC GLOBAL HQ</div>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="stats-panel" id="statsPanel">
+        <div class="stat">
+            <span class="stat-label">Active Locations:</span>
+            <span id="locationCount">0</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Globe Rotation:</span>
+            <span id="rotation">0°</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Destination Distance:</span>
+            <span id="distance">Calculating...</span>
+        </div>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+        <h3 id="locationName">Hover over a location</h3>
+        <p id="locationDetails">Explore Hollister ULC global operations</p>
+    </div>
+
+    <div class="destination-marker" id="destinationMarker">
+        🎯 FINAL DROP: BALLINA, CO. MAYO
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const canvas = document.getElementById('canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x0a0e27, 1);
+
+        camera.position.z = 2.5;
+
+        // Hollister ULC locations (sample global distribution)
+        const locations = [
+            { name: 'Hollister HQ', lat: 34.0195, lon: -117.2474, country: 'USA - California' },
+            { name: 'Europe Distribution', lat: 51.5074, lon: -0.1278, country: 'UK - London' },
+            { name: 'APAC Hub', lat: 1.3521, lon: 103.8198, country: 'Singapore' },
+            { name: 'Japan Operations', lat: 35.6762, lon: 139.6503, country: 'Japan - Tokyo' },
+            { name: 'Australia Logistics', lat: -33.8688, lon: 151.2093, country: 'Australia - Sydney' },
+            { name: 'Brazil Regional', lat: -23.5505, lon: -46.6333, country: 'Brazil - São Paulo' },
+            { name: 'China Manufacturing', lat: 31.2304, lon: 121.4737, country: 'China - Shanghai' },
+            { name: 'Middle East Center', lat: 25.2048, lon: 55.2708, country: 'UAE - Dubai' },
+            { name: 'Canada Office', lat: 43.6532, lon: -79.3832, country: 'Canada - Toronto' },
+            { name: 'Mexico Distribution', lat: 19.4326, lon: -99.1332, country: 'Mexico - Mexico City' },
+            { name: 'India Service', lat: 28.7041, lon: 77.1025, country: 'India - New Delhi' },
+            { name: 'South Korea Hub', lat: 37.5665, lon: 126.9780, country: 'South Korea - Seoul' },
+            { name: 'FINAL DESTINATION', lat: 54.1225, lon: -9.1642, country: 'Ireland - Ballina, Co. Mayo' }
+        ];
+
+        // Create globe
+        const geometry = new THREE.SphereGeometry(1, 64, 64);
+        const canvas2d = document.createElement('canvas');
+        canvas2d.width = 2048;
+        canvas2d.height = 1024;
+        const ctx = canvas2d.getContext('2d');
+
+        // Draw Earth texture
+        ctx.fillStyle = '#1a3a1a';
+        ctx.fillRect(0, 0, canvas2d.width, canvas2d.height);
+
+        // Add continents (simplified)
+        ctx.fillStyle = '#2d5a2d';
+        ctx.fillRect(0, 300, canvas2d.width, 500);
+
+        const texture = new THREE.CanvasTexture(canvas2d);
+        const material = new THREE.MeshPhongMaterial({ map: texture });
+        const globe = new THREE.Mesh(geometry, material);
+        scene.add(globe);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 3, 5);
+        scene.add(directionalLight);
+
+        // Location markers
+        const markers = [];
+        const markerGroup = new THREE.Group();
+        globe.add(markerGroup);
+
+        function latLonToVec3(lat, lon, radius) {
+            const phi = (90 - lat) * Math.PI / 180;
+            const theta = (lon + 180) * Math.PI / 180;
+
+            const x = -radius * Math.sin(phi) * Math.cos(theta);
+            const y = radius * Math.cos(phi);
+            const z = radius * Math.sin(phi) * Math.sin(theta);
+
+            return new THREE.Vector3(x, y, z);
+        }
+
+        locations.forEach((loc, index) => {
+            const pos = latLonToVec3(loc.lat, loc.lon, 1.05);
+
+            const isDestination = index === locations.length - 1;
+            const markerGeom = new THREE.SphereGeometry(isDestination ? 0.15 : 0.08, 32, 32);
+            const markerMat = new THREE.MeshBasicMaterial({
+                color: isDestination ? 0xff3232 : 0x00ff88,
+                emissive: isDestination ? 0xff3232 : 0x00ff88,
+                emissiveIntensity: 0.8
+            });
+            const marker = new THREE.Mesh(markerGeom, markerMat);
+
+            marker.position.copy(pos);
+            marker.userData = loc;
+            marker.isDestination = isDestination;
+
+            // Add glow effect
+            const glowGeom = new THREE.SphereGeometry(isDestination ? 0.2 : 0.12, 32, 32);
+            const glowMat = new THREE.MeshBasicMaterial({
+                color: isDestination ? 0xff3232 : 0x00ff88,
+                transparent: true,
+                opacity: 0.2,
+                side: THREE.BackSide
+            });
+            const glow = new THREE.Mesh(glowGeom, glowMat);
+            marker.add(glow);
+
+            markerGroup.add(marker);
+            markers.push(marker);
+        });
+
+        // Stars background
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.02 });
+        const starsVertices = [];
+        for (let i = 0; i < 10000; i++) {
+            const x = (Math.random() - 0.5) * 100;
+            const y = (Math.random() - 0.5) * 100;
+            const z = (Math.random() - 0.5) * 100;
+            starsVertices.push(x, y, z);
+        }
+        starsGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(starsVertices), 3));
+        const stars = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(stars);
+
+        // Raycaster for mouse interaction
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        document.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(markerGroup.children);
+
+            if (intersects.length > 0) {
+                const marker = intersects[0].object;
+                document.getElementById('locationName').textContent = marker.userData.name;
+                document.getElementById('locationDetails').textContent = marker.userData.country;
+                document.getElementById('infoPanel').classList.add('visible');
+            }
+        });
+
+        // Animation variables
+        let animationPhase = 'spin';
+        let spinSpeed = 0.0005;
+        let targetZoom = 2.5;
+        let animationStartTime = 0;
+        const animationDuration = 4000;
+
+        // Loading screen animation
+        const loadingScreen = document.getElementById('loadingScreen');
+        const dnaHelix = document.getElementById('dnaHelix');
+
+        // Create DNA helix nodes
+        for (let i = 0; i < 50; i++) {
+            const node = document.createElement('div');
+            node.className = 'helix';
+            const angle = (i / 50) * Math.PI * 4;
+            const x = Math.cos(angle) * 60 + 80;
+            const y = (i / 50) * 300;
+            const z = Math.sin(angle) * 60;
+            node.style.left = x + 'px';
+            node.style.top = y + 'px';
+            node.style.transform = `translateZ(${z}px)`;
+            dnaHelix.appendChild(node);
+        }
+
+        // Start loading animation and transition
+        setTimeout(() => {
+            loadingScreen.classList.add('hidden');
+            document.getElementById('title').classList.add('visible');
+            document.getElementById('statsPanel').classList.add('visible');
+            document.getElementById('destinationMarker').classList.add('visible');
+            animationStartTime = Date.now();
+            animationPhase = 'approaching';
+        }, 2000);
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Rotate globe
+            if (animationPhase === 'spin') {
+                globe.rotation.y += spinSpeed;
+                markerGroup.rotation.y += spinSpeed;
+            } else if (animationPhase === 'approaching') {
+                const elapsed = Date.now() - animationStartTime;
+                const progress = Math.min(elapsed / animationDuration, 1);
+
+                // Smooth zoom to destination
+                targetZoom = 2.5 - progress * 1.5;
+                camera.position.z = targetZoom;
+
+                // Rotate to point at Ballina
+                const ballinaPos = latLonToVec3(54.1225, -9.1642, 1);
+                const targetRotation = Math.atan2(ballinaPos.x, ballinaPos.z);
+                globe.rotation.y += (targetRotation - globe.rotation.y) * 0.02;
+
+                if (progress === 1) {
+                    animationPhase = 'arrived';
+                }
+            }
+
+            // Update stats
+            const rotation = (globe.rotation.y * 180 / Math.PI) % 360;
+            document.getElementById('rotation').textContent = Math.abs(rotation).toFixed(1) + '°';
+            document.getElementById('locationCount').textContent = locations.length - 1;
+
+            // Calculate distance to destination (simplified)
+            const camDist = Math.sqrt(camera.position.x**2 + camera.position.y**2 + camera.position.z**2);
+            document.getElementById('distance').textContent = (camDist * 1000).toFixed(0) + ' km';
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
