@@ -101,13 +101,29 @@
             object-fit: cover;
         }
 
-        .facility-canvas {
+        .facility-canvas-container {
             flex: 1;
             position: relative;
             border-radius: 10px;
             overflow: hidden;
             border: 2px solid rgba(0, 255, 136, 0.5);
             background: linear-gradient(135deg, #0a1428 0%, #1a2a4a 100%);
+        }
+
+        .facility-canvas-container canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .facility-background-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.9;
         }
 
         .facility-info {
@@ -388,10 +404,10 @@
             <button class="close-facility" onclick="closeFacility()">← BACK TO GLOBE</button>
         </div>
         <div class="facility-content">
-            <div class="facility-image">
-                <img id="facilityImage" src="" alt="Facility">
+            <div class="facility-canvas-container">
+                <img id="facilityBackgroundImage" class="facility-background-image" src="" alt="Facility Background">
+                <canvas id="facilityCanvas"></canvas>
             </div>
-            <canvas id="facilityCanvas" class="facility-canvas"></canvas>
             <div class="facility-info">
                 <div class="info-section">
                     <h3>📍 Location</h3>
@@ -430,30 +446,30 @@
             'ballina': {
                 name: 'Ballina Manufacturing Facility',
                 location: 'Ballina, Co. Mayo, Ireland',
-                operations: 'Medical device assembly, ostomy care products manufacturing',
-                tech: 'Collaborative robotic systems, automated quality control, AGV logistics network',
-                image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"%3E%3Crect fill="%231a2a4a" width="1200" height="800"/%3E%3C/svg%3E'
+                operations: 'Medical device assembly, ostomy care products manufacturing - VaPro Technology Integration',
+                tech: 'Collaborative robotic systems, automated quality control, AGV logistics network, Smart manufacturing sensors',
+                image: null // Will be loaded from external source
             },
             'stuarts-draft': {
                 name: 'Stuarts Draft Manufacturing Facility',
                 location: 'Stuarts Draft, Virginia, USA',
                 operations: 'Advanced medical device manufacturing and assembly',
                 tech: 'State-of-the-art robotic assembly lines, real-time monitoring systems',
-                image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"%3E%3Crect fill="%231a2a4a" width="1200" height="800"/%3E%3C/svg%3E'
+                image: null
             },
             'bawal': {
                 name: 'Bawal Manufacturing Facility',
                 location: 'Bawal, India',
                 operations: 'Component manufacturing and precision assembly',
                 tech: 'Advanced manufacturing equipment, quality assurance systems',
-                image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"%3E%3Crect fill="%231a2a4a" width="1200" height="800"/%3E%3C/svg%3E'
+                image: null
             },
             'kaunas': {
                 name: 'Kaunas Manufacturing Facility',
                 location: 'Kaunas, Lithuania',
                 operations: 'Manufacturing and distribution hub for European operations',
                 tech: 'Integrated production systems, logistics coordination',
-                image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"%3E%3Crect fill="%231a2a4a" width="1200" height="800"/%3E%3C/svg%3E'
+                image: null
             }
         };
 
@@ -730,8 +746,13 @@
             document.getElementById('facilityOperations').textContent = facility.operations;
             document.getElementById('facilityTech').textContent = facility.tech;
 
-            const img = document.getElementById('facilityImage');
-            img.src = facility.image;
+            const bgImg = document.getElementById('facilityBackgroundImage');
+            if (facility.image) {
+                bgImg.src = facility.image;
+                bgImg.style.display = 'block';
+            } else {
+                bgImg.style.display = 'none';
+            }
 
             facilityView.classList.add('active');
 
@@ -748,7 +769,7 @@
 
         function startFacilityAnimation(facilityCode) {
             const canvas = document.getElementById('facilityCanvas');
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d', { alpha: true });
 
             // Set canvas size
             canvas.width = canvas.offsetWidth;
@@ -758,127 +779,233 @@
             const height = canvas.height;
             let animationTime = 0;
 
-            // Robot and people data
+            // Clear canvas background - make it transparent for background image to show
+            canvas.style.background = 'transparent';
+
+            // Robot positions based on Hollister factory layout
+            // Positioned to overlay on actual robotic arms in the image
             const robots = [
-                { x: 200, y: 150, width: 80, height: 100, armAngle: 0 },
-                { x: 500, y: 200, width: 80, height: 100, armAngle: 0 },
-                { x: 800, y: 150, width: 80, height: 100, armAngle: 0 }
+                { x: width * 0.4, y: height * 0.35, width: 70, height: 90, armAngle: 0, color: '#00ff88' },
+                { x: width * 0.6, y: height * 0.4, width: 70, height: 90, armAngle: 0, color: '#00ff88' },
+                { x: width * 0.75, y: height * 0.35, width: 70, height: 90, armAngle: 0, color: '#00ff88' }
             ];
 
+            // Operator positions - positioned at workstations
             const people = [
-                { x: 150, y: 300, bobOffset: 0 },
-                { x: 700, y: 320, bobOffset: Math.PI / 3 },
-                { x: 1100, y: 300, bobOffset: Math.PI * 2 / 3 }
+                { x: width * 0.25, y: height * 0.55, bobOffset: 0 },
+                { x: width * 0.5, y: height * 0.6, bobOffset: Math.PI / 3 },
+                { x: width * 0.8, y: height * 0.55, bobOffset: Math.PI * 2 / 3 }
             ];
 
+            // AGV path - moving across the facility floor
             const agv = {
-                x: 0,
-                y: height - 100,
-                width: 120,
-                height: 50
+                startX: -120,
+                endX: width + 120,
+                y: height * 0.75,
+                width: 110,
+                height: 45,
+                cycleLength: 6000 // Complete cycle in 6 seconds
             };
 
             function drawRobot(robot) {
                 ctx.save();
                 ctx.translate(robot.x, robot.y);
 
-                // Robot body
+                // Glow effect
+                ctx.shadowColor = 'rgba(0, 255, 136, 0.5)';
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+
+                // Robot base/column
+                ctx.fillStyle = '#1a1a1a';
+                ctx.fillRect(-robot.width/3, robot.height * 0.4, robot.width * 0.66, robot.height * 0.6);
+
+                // Robot torso
                 ctx.fillStyle = '#222';
-                ctx.fillRect(-robot.width/2, 0, robot.width, robot.height * 0.6);
+                ctx.fillRect(-robot.width/2, 0, robot.width, robot.height * 0.45);
 
-                // Head
+                // Head/Controller
                 ctx.fillStyle = '#333';
-                ctx.fillRect(-robot.width/2 + 10, -25, robot.width - 20, 25);
-
-                // Arm
-                ctx.strokeStyle = '#00ff88';
-                ctx.lineWidth = 8;
                 ctx.beginPath();
-                ctx.moveTo(-robot.width/2 + 30, robot.height * 0.3);
-                const armX = Math.cos(robot.armAngle) * 60;
-                const armY = Math.sin(robot.armAngle) * 60;
-                ctx.lineTo(-robot.width/2 + 30 + armX, robot.height * 0.3 + armY);
+                ctx.arc(0, -15, robot.width * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Left arm - stationary
+                ctx.strokeStyle = '#555';
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.moveTo(-robot.width * 0.25, robot.height * 0.15);
+                ctx.lineTo(-robot.width * 0.4, robot.height * 0.3);
                 ctx.stroke();
 
-                // End effector
+                // Right arm - moving/working
+                ctx.strokeStyle = robot.color;
+                ctx.lineWidth = 8;
+                ctx.beginPath();
+                ctx.moveTo(robot.width * 0.25, robot.height * 0.15);
+                const armLength = 50;
+                const armX = Math.cos(robot.armAngle) * armLength;
+                const armY = Math.sin(robot.armAngle) * armLength - 20;
+                ctx.lineTo(robot.width * 0.25 + armX, robot.height * 0.15 + armY);
+                ctx.stroke();
+
+                // End effector (gripper)
                 ctx.fillStyle = '#ff3232';
-                ctx.fillRect(-robot.width/2 + 30 + armX - 8, robot.height * 0.3 + armY - 8, 16, 16);
+                ctx.shadowColor = 'rgba(255, 50, 50, 0.8)';
+                ctx.beginPath();
+                ctx.arc(robot.width * 0.25 + armX, robot.height * 0.15 + armY, 10, 0, Math.PI * 2);
+                ctx.fill();
 
                 ctx.restore();
             }
 
             function drawPerson(person) {
-                const bobAmount = Math.sin(animationTime * 0.01 + person.bobOffset) * 5;
+                const bobAmount = Math.sin(animationTime * 0.008 + person.bobOffset) * 4;
+                const armSwing = Math.sin(animationTime * 0.012 + person.bobOffset) * 12;
+                const legSwing = Math.sin(animationTime * 0.015 + person.bobOffset) * 8;
 
                 ctx.save();
                 ctx.translate(person.x, person.y + bobAmount);
 
                 // Head
-                ctx.fillStyle = '#ffdbac';
+                ctx.fillStyle = '#f4a460';
                 ctx.beginPath();
-                ctx.arc(0, -40, 15, 0, Math.PI * 2);
+                ctx.arc(0, -45, 12, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Body
-                ctx.fillStyle = '#4a90e2';
-                ctx.fillRect(-12, -20, 24, 30);
+                // Hair
+                ctx.fillStyle = '#8b6914';
+                ctx.beginPath();
+                ctx.arc(0, -50, 12, Math.PI, 0);
+                ctx.fill();
 
-                // Arms
-                const armSwing = Math.sin(animationTime * 0.015 + person.bobOffset) * 15;
-                ctx.fillStyle = '#ffdbac';
-                ctx.fillRect(-25 + armSwing, -15, 15, 8);
-                ctx.fillRect(10 + armSwing, -15, 15, 8);
+                // Body - White coat
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(-14, -30, 28, 35);
+
+                // Coat details
+                ctx.strokeStyle = '#ddd';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, -30);
+                ctx.lineTo(0, 5);
+                ctx.stroke();
+
+                // Left arm
+                ctx.strokeStyle = '#f4a460';
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.moveTo(-14, -20);
+                ctx.lineTo(-14 - armSwing, -25 - Math.abs(armSwing) * 2);
+                ctx.stroke();
+
+                // Right arm
+                ctx.beginPath();
+                ctx.moveTo(14, -20);
+                ctx.lineTo(14 + armSwing, -25 - Math.abs(armSwing) * 2);
+                ctx.stroke();
+
+                // Hands
+                ctx.fillStyle = '#f4a460';
+                ctx.beginPath();
+                ctx.arc(-14 - armSwing, -25 - Math.abs(armSwing) * 2, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(14 + armSwing, -25 - Math.abs(armSwing) * 2, 5, 0, Math.PI * 2);
+                ctx.fill();
 
                 // Legs
                 ctx.fillStyle = '#333';
-                ctx.fillRect(-8, 10, 8, 20);
-                ctx.fillRect(0, 10, 8, 20);
+                ctx.fillRect(-8, 5, 6, 18);
+                ctx.fillRect(2, 5, 6, 18);
+
+                // Shoes
+                ctx.fillStyle = '#000';
+                ctx.fillRect(-8, 22, 6, 5);
+                ctx.fillRect(2, 22, 6, 5);
 
                 ctx.restore();
             }
 
             function drawAGV(agv) {
-                const position = (animationTime * 0.2) % (width + 200) - 100;
+                // Calculate position with smooth looping
+                const progress = (animationTime % agv.cycleLength) / agv.cycleLength;
+                const position = agv.startX + (agv.endX - agv.startX) * progress;
 
                 ctx.save();
 
-                // AGV body
-                ctx.fillStyle = '#00ff88';
+                // Add glow
+                ctx.shadowColor = 'rgba(0, 255, 136, 0.6)';
+                ctx.shadowBlur = 20;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+
+                // AGV base - main body
+                ctx.fillStyle = '#ffffff';
                 ctx.fillRect(position, agv.y, agv.width, agv.height);
 
-                // Cabin
-                ctx.fillStyle = '#00dd66';
-                ctx.fillRect(position + 20, agv.y - 20, 40, 20);
+                // Blue accent strip (top)
+                ctx.fillStyle = '#0099ff';
+                ctx.fillRect(position, agv.y, agv.width, 8);
 
-                // Wheels
+                // Top cover/cabin area
+                ctx.fillStyle = '#e8e8e8';
+                ctx.fillRect(position + 10, agv.y - 15, agv.width - 20, 15);
+
+                // Status light
+                ctx.fillStyle = progress > 0.5 ? '#00ff88' : '#ffaa00';
+                ctx.beginPath();
+                ctx.arc(position + agv.width - 15, agv.y - 8, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Left wheel
                 ctx.fillStyle = '#111';
                 ctx.beginPath();
-                ctx.arc(position + 30, agv.y + agv.height, 12, 0, Math.PI * 2);
+                ctx.arc(position + 25, agv.y + agv.height, 10, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.beginPath();
-                ctx.arc(position + 90, agv.y + agv.height, 12, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Direction arrow
-                ctx.strokeStyle = '#ffff00';
+                // Wheel details
+                ctx.strokeStyle = '#444';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.moveTo(position + agv.width + 10, agv.y + agv.height / 2);
-                ctx.lineTo(position + agv.width + 25, agv.y + agv.height / 2);
+                ctx.arc(position + 25, agv.y + agv.height, 10, 0, Math.PI * 2);
                 ctx.stroke();
+
+                // Right wheel
+                ctx.fillStyle = '#111';
+                ctx.beginPath();
+                ctx.arc(position + agv.width - 25, agv.y + agv.height, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#444';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(position + agv.width - 25, agv.y + agv.height, 10, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Direction indicator
+                ctx.fillStyle = '#ffff00';
+                ctx.beginPath();
+                ctx.moveTo(position + agv.width + 5, agv.y + agv.height / 2 - 8);
+                ctx.lineTo(position + agv.width + 15, agv.y + agv.height / 2);
+                ctx.lineTo(position + agv.width + 5, agv.y + agv.height / 2 + 8);
+                ctx.closePath();
+                ctx.fill();
 
                 ctx.restore();
             }
 
             function drawEnvironment() {
-                // Background
-                ctx.fillStyle = '#0f1827';
+                // Clear canvas with transparency to show background image
+                ctx.clearRect(0, 0, width, height);
+
+                // Optional: Add semi-transparent overlay for better text contrast
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
                 ctx.fillRect(0, 0, width, height);
 
-                // Grid floor
-                ctx.strokeStyle = 'rgba(0, 255, 136, 0.1)';
+                // Subtle grid overlay
+                ctx.strokeStyle = 'rgba(0, 255, 136, 0.08)';
                 ctx.lineWidth = 1;
-                const gridSize = 50;
+                const gridSize = 60;
                 for (let i = 0; i < width; i += gridSize) {
                     ctx.beginPath();
                     ctx.moveTo(i, 0);
@@ -891,20 +1018,16 @@
                     ctx.lineTo(width, i);
                     ctx.stroke();
                 }
-
-                // Station markers
-                ctx.fillStyle = 'rgba(255, 50, 50, 0.2)';
-                for (let i = 0; i < 6; i++) {
-                    ctx.fillRect(100 + i * 200, 100, 80, 80);
-                }
             }
 
             function animate() {
                 drawEnvironment();
 
-                // Update robot arm angles
-                robots.forEach(robot => {
-                    robot.armAngle = Math.sin(animationTime * 0.01) * Math.PI / 3 + Math.PI / 4;
+                // Update robot arm angles - realistic assembly motion
+                robots.forEach((robot, index) => {
+                    // Stagger the robots' motion
+                    const offset = index * Math.PI * 0.7;
+                    robot.armAngle = Math.sin(animationTime * 0.008 + offset) * Math.PI * 0.6 + Math.PI * 0.3;
                 });
 
                 // Draw all elements
@@ -912,12 +1035,26 @@
                 people.forEach(drawPerson);
                 drawAGV(agv);
 
-                // Draw status text
+                // Draw status overlay with facility info
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                ctx.fillRect(10, 10, 250, 100);
+
                 ctx.fillStyle = '#00ff88';
-                ctx.font = '14px Arial';
-                ctx.fillText(`Operating Robots: ${robots.length}`, 20, 30);
-                ctx.fillText(`Active Operators: ${people.length}`, 20, 50);
-                ctx.fillText(`AGV Status: Moving`, 20, 70);
+                ctx.font = 'bold 14px Arial';
+                ctx.fillText('FACILITY STATUS', 20, 30);
+
+                ctx.font = '12px Arial';
+                ctx.fillStyle = '#00ff88';
+                ctx.fillText(`🤖 Operating Robots: ${robots.length}`, 20, 50);
+                ctx.fillText(`👥 Active Operators: ${people.length}`, 20, 68);
+                ctx.fillText(`🚚 AGV Status: Moving`, 20, 86);
+                ctx.fillText(`⚙️ Uptime: 99.8%`, 20, 104);
+
+                // Draw workstation count
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.font = '11px Arial';
+                const workstations = robots.length + people.length;
+                ctx.fillText(`Active Workstations: ${workstations}`, width - 200, height - 20);
 
                 animationTime++;
                 facilityAnimationId = requestAnimationFrame(animate);
