@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hollister ULC - Global Locations</title>
+    <title>Hollister - Global Medical Device Manufacturing</title>
     <style>
         * {
             margin: 0;
@@ -16,6 +16,143 @@
             background: #0a0e27;
             color: #fff;
             overflow: hidden;
+        }
+
+        #facilityView {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a2a4a 0%, #0a1428 100%);
+            display: none;
+            z-index: 900;
+            overflow-y: auto;
+            animation: slideIn 0.5s ease;
+        }
+
+        #facilityView.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .facility-header {
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            border-bottom: 2px solid #ff3232;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .facility-header h2 {
+            font-size: 28px;
+            color: #00ff88;
+            letter-spacing: 2px;
+        }
+
+        .close-facility {
+            background: #ff3232;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .close-facility:hover {
+            background: #ff5050;
+        }
+
+        .facility-content {
+            display: flex;
+            flex: 1;
+            gap: 30px;
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .facility-image {
+            flex: 1;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(0, 255, 136, 0.3);
+            border: 2px solid rgba(0, 255, 136, 0.5);
+        }
+
+        .facility-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .facility-canvas {
+            flex: 1;
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid rgba(0, 255, 136, 0.5);
+            background: linear-gradient(135deg, #0a1428 0%, #1a2a4a 100%);
+        }
+
+        .facility-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .info-section {
+            background: rgba(0, 255, 136, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #00ff88;
+        }
+
+        .info-section h3 {
+            color: #00ff88;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .info-section p {
+            color: #ccc;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .animation-legend {
+            background: rgba(255, 50, 50, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ff3232;
+            font-size: 12px;
+        }
+
+        .animation-legend .legend-item {
+            margin: 5px 0;
+            color: #ccc;
+        }
+
+        .animation-legend .legend-item::before {
+            content: "● ";
+            color: #ff3232;
+            margin-right: 5px;
         }
 
         #loadingScreen {
@@ -242,11 +379,84 @@
     </div>
 
     <div class="destination-marker" id="destinationMarker">
-        🎯 FINAL DROP: BALLINA, CO. MAYO
+        🎯 CLICK TO EXPLORE BALLINA FACILITY
+    </div>
+
+    <div id="facilityView">
+        <div class="facility-header">
+            <h2 id="facilityName">Ballina Manufacturing</h2>
+            <button class="close-facility" onclick="closeFacility()">← BACK TO GLOBE</button>
+        </div>
+        <div class="facility-content">
+            <div class="facility-image">
+                <img id="facilityImage" src="" alt="Facility">
+            </div>
+            <canvas id="facilityCanvas" class="facility-canvas"></canvas>
+            <div class="facility-info">
+                <div class="info-section">
+                    <h3>📍 Location</h3>
+                    <p id="facilityLocation">Ballina, Co. Mayo, Ireland</p>
+                </div>
+                <div class="info-section">
+                    <h3>🏭 Operations</h3>
+                    <p id="facilityOperations">Medical device manufacturing and assembly</p>
+                </div>
+                <div class="info-section">
+                    <h3>🤖 Technology</h3>
+                    <p id="facilityTech">Automated robotic systems, AGV logistics, advanced quality control</p>
+                </div>
+                <div class="animation-legend">
+                    <div style="color: #00ff88; margin-bottom: 8px; font-weight: bold;">Active Animations:</div>
+                    <div class="legend-item">Collaborative robots assembling devices</div>
+                    <div class="legend-item">Operators monitoring and quality checking</div>
+                    <div class="legend-item">AGV transporting materials</div>
+                    <div class="legend-item">Environmental monitoring systems</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
+        // Hollister Manufacturing Facilities
+        const locations = [
+            { name: 'Ballina, Ireland', lat: 54.1225, lon: -9.1642, country: 'Ireland', facility: 'ballina', isMain: true },
+            { name: 'Stuarts Draft, Virginia', lat: 38.8142, lon: -78.9853, country: 'USA', facility: 'stuarts-draft', isMain: true },
+            { name: 'Bawal, India', lat: 27.5141, lon: 77.3471, country: 'India', facility: 'bawal', isMain: true },
+            { name: 'Kaunas, Lithuania', lat: 54.8973, lon: 24.2536, country: 'Lithuania', facility: 'kaunas', isMain: true }
+        ];
+
+        const facilityDetails = {
+            'ballina': {
+                name: 'Ballina Manufacturing Facility',
+                location: 'Ballina, Co. Mayo, Ireland',
+                operations: 'Medical device assembly, ostomy care products manufacturing',
+                tech: 'Collaborative robotic systems, automated quality control, AGV logistics network',
+                image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"%3E%3Crect fill="%231a2a4a" width="1200" height="800"/%3E%3C/svg%3E'
+            },
+            'stuarts-draft': {
+                name: 'Stuarts Draft Manufacturing Facility',
+                location: 'Stuarts Draft, Virginia, USA',
+                operations: 'Advanced medical device manufacturing and assembly',
+                tech: 'State-of-the-art robotic assembly lines, real-time monitoring systems',
+                image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"%3E%3Crect fill="%231a2a4a" width="1200" height="800"/%3E%3C/svg%3E'
+            },
+            'bawal': {
+                name: 'Bawal Manufacturing Facility',
+                location: 'Bawal, India',
+                operations: 'Component manufacturing and precision assembly',
+                tech: 'Advanced manufacturing equipment, quality assurance systems',
+                image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"%3E%3Crect fill="%231a2a4a" width="1200" height="800"/%3E%3C/svg%3E'
+            },
+            'kaunas': {
+                name: 'Kaunas Manufacturing Facility',
+                location: 'Kaunas, Lithuania',
+                operations: 'Manufacturing and distribution hub for European operations',
+                tech: 'Integrated production systems, logistics coordination',
+                image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"%3E%3Crect fill="%231a2a4a" width="1200" height="800"/%3E%3C/svg%3E'
+            }
+        };
+
         // Scene setup
         const canvas = document.getElementById('canvas');
         const scene = new THREE.Scene();
@@ -258,40 +468,66 @@
 
         camera.position.z = 2.5;
 
-        // Hollister ULC locations (sample global distribution)
-        const locations = [
-            { name: 'Hollister HQ', lat: 34.0195, lon: -117.2474, country: 'USA - California' },
-            { name: 'Europe Distribution', lat: 51.5074, lon: -0.1278, country: 'UK - London' },
-            { name: 'APAC Hub', lat: 1.3521, lon: 103.8198, country: 'Singapore' },
-            { name: 'Japan Operations', lat: 35.6762, lon: 139.6503, country: 'Japan - Tokyo' },
-            { name: 'Australia Logistics', lat: -33.8688, lon: 151.2093, country: 'Australia - Sydney' },
-            { name: 'Brazil Regional', lat: -23.5505, lon: -46.6333, country: 'Brazil - São Paulo' },
-            { name: 'China Manufacturing', lat: 31.2304, lon: 121.4737, country: 'China - Shanghai' },
-            { name: 'Middle East Center', lat: 25.2048, lon: 55.2708, country: 'UAE - Dubai' },
-            { name: 'Canada Office', lat: 43.6532, lon: -79.3832, country: 'Canada - Toronto' },
-            { name: 'Mexico Distribution', lat: 19.4326, lon: -99.1332, country: 'Mexico - Mexico City' },
-            { name: 'India Service', lat: 28.7041, lon: 77.1025, country: 'India - New Delhi' },
-            { name: 'South Korea Hub', lat: 37.5665, lon: 126.9780, country: 'South Korea - Seoul' },
-            { name: 'FINAL DESTINATION', lat: 54.1225, lon: -9.1642, country: 'Ireland - Ballina, Co. Mayo' }
-        ];
-
-        // Create globe
-        const geometry = new THREE.SphereGeometry(1, 64, 64);
+        // Create realistic Earth globe
+        const geometry = new THREE.SphereGeometry(1, 128, 128);
         const canvas2d = document.createElement('canvas');
-        canvas2d.width = 2048;
-        canvas2d.height = 1024;
+        canvas2d.width = 4096;
+        canvas2d.height = 2048;
         const ctx = canvas2d.getContext('2d');
 
-        // Draw Earth texture
-        ctx.fillStyle = '#1a3a1a';
-        ctx.fillRect(0, 0, canvas2d.width, canvas2d.height);
+        // Create procedural Earth texture
+        const imageData = ctx.createImageData(4096, 2048);
+        const data = imageData.data;
 
-        // Add continents (simplified)
-        ctx.fillStyle = '#2d5a2d';
-        ctx.fillRect(0, 300, canvas2d.width, 500);
+        for (let i = 0; i < data.length; i += 4) {
+            const pixelIndex = i / 4;
+            const x = pixelIndex % 4096;
+            const y = Math.floor(pixelIndex / 4096);
+
+            // Convert to lat/lon
+            const lon = (x / 4096) * 360 - 180;
+            const lat = 90 - (y / 2048) * 180;
+
+            // Perlin-like noise approximation for continents
+            const value = Math.sin(lat * 0.02) * Math.cos(lon * 0.02) +
+                         Math.sin(lat * 0.05) * Math.sin(lon * 0.05) * 0.5;
+
+            if (value > 0.3) {
+                // Land - green/brown gradient
+                const landIntensity = value * 100;
+                data[i] = 34 + landIntensity * 0.3;      // R
+                data[i + 1] = 89 + landIntensity * 0.4;  // G
+                data[i + 2] = 34 + landIntensity * 0.2;  // B
+            } else {
+                // Ocean - blue gradient
+                const oceanDepth = (0.3 - value) * 100;
+                data[i] = 20 + oceanDepth * 0.1;         // R
+                data[i + 1] = 40 + oceanDepth * 0.2;     // G
+                data[i + 2] = 80 + oceanDepth * 0.3;     // B
+            }
+            data[i + 3] = 255; // Alpha
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+
+        // Add clouds overlay
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 50; i++) {
+            const x = Math.random() * 4096;
+            const y = Math.random() * 2048;
+            const w = Math.random() * 400 + 200;
+            ctx.beginPath();
+            ctx.arc(x, y, w, 0, Math.PI * 2);
+            ctx.stroke();
+        }
 
         const texture = new THREE.CanvasTexture(canvas2d);
-        const material = new THREE.MeshPhongMaterial({ map: texture });
+        const material = new THREE.MeshPhongMaterial({
+            map: texture,
+            shininess: 10,
+            specular: 0x111111
+        });
         const globe = new THREE.Mesh(geometry, material);
         scene.add(globe);
 
@@ -380,6 +616,21 @@
                 document.getElementById('locationName').textContent = marker.userData.name;
                 document.getElementById('locationDetails').textContent = marker.userData.country;
                 document.getElementById('infoPanel').classList.add('visible');
+                canvas.style.cursor = 'pointer';
+            } else {
+                canvas.style.cursor = 'default';
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(markerGroup.children);
+
+            if (intersects.length > 0) {
+                const marker = intersects[0].object;
+                if (marker.userData.facility) {
+                    openFacility(marker.userData.facility);
+                }
             }
         });
 
@@ -464,6 +715,218 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+
+        // Facility View System
+        let facilityAnimationId = null;
+
+        function openFacility(facilityCode) {
+            const facilityView = document.getElementById('facilityView');
+            const facility = facilityDetails[facilityCode];
+
+            if (!facility) return;
+
+            document.getElementById('facilityName').textContent = facility.name;
+            document.getElementById('facilityLocation').textContent = facility.location;
+            document.getElementById('facilityOperations').textContent = facility.operations;
+            document.getElementById('facilityTech').textContent = facility.tech;
+
+            const img = document.getElementById('facilityImage');
+            img.src = facility.image;
+
+            facilityView.classList.add('active');
+
+            // Start facility animations
+            startFacilityAnimation(facilityCode);
+        }
+
+        function closeFacility() {
+            document.getElementById('facilityView').classList.remove('active');
+            if (facilityAnimationId) {
+                cancelAnimationFrame(facilityAnimationId);
+            }
+        }
+
+        function startFacilityAnimation(facilityCode) {
+            const canvas = document.getElementById('facilityCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Set canvas size
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            const width = canvas.width;
+            const height = canvas.height;
+            let animationTime = 0;
+
+            // Robot and people data
+            const robots = [
+                { x: 200, y: 150, width: 80, height: 100, armAngle: 0 },
+                { x: 500, y: 200, width: 80, height: 100, armAngle: 0 },
+                { x: 800, y: 150, width: 80, height: 100, armAngle: 0 }
+            ];
+
+            const people = [
+                { x: 150, y: 300, bobOffset: 0 },
+                { x: 700, y: 320, bobOffset: Math.PI / 3 },
+                { x: 1100, y: 300, bobOffset: Math.PI * 2 / 3 }
+            ];
+
+            const agv = {
+                x: 0,
+                y: height - 100,
+                width: 120,
+                height: 50
+            };
+
+            function drawRobot(robot) {
+                ctx.save();
+                ctx.translate(robot.x, robot.y);
+
+                // Robot body
+                ctx.fillStyle = '#222';
+                ctx.fillRect(-robot.width/2, 0, robot.width, robot.height * 0.6);
+
+                // Head
+                ctx.fillStyle = '#333';
+                ctx.fillRect(-robot.width/2 + 10, -25, robot.width - 20, 25);
+
+                // Arm
+                ctx.strokeStyle = '#00ff88';
+                ctx.lineWidth = 8;
+                ctx.beginPath();
+                ctx.moveTo(-robot.width/2 + 30, robot.height * 0.3);
+                const armX = Math.cos(robot.armAngle) * 60;
+                const armY = Math.sin(robot.armAngle) * 60;
+                ctx.lineTo(-robot.width/2 + 30 + armX, robot.height * 0.3 + armY);
+                ctx.stroke();
+
+                // End effector
+                ctx.fillStyle = '#ff3232';
+                ctx.fillRect(-robot.width/2 + 30 + armX - 8, robot.height * 0.3 + armY - 8, 16, 16);
+
+                ctx.restore();
+            }
+
+            function drawPerson(person) {
+                const bobAmount = Math.sin(animationTime * 0.01 + person.bobOffset) * 5;
+
+                ctx.save();
+                ctx.translate(person.x, person.y + bobAmount);
+
+                // Head
+                ctx.fillStyle = '#ffdbac';
+                ctx.beginPath();
+                ctx.arc(0, -40, 15, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Body
+                ctx.fillStyle = '#4a90e2';
+                ctx.fillRect(-12, -20, 24, 30);
+
+                // Arms
+                const armSwing = Math.sin(animationTime * 0.015 + person.bobOffset) * 15;
+                ctx.fillStyle = '#ffdbac';
+                ctx.fillRect(-25 + armSwing, -15, 15, 8);
+                ctx.fillRect(10 + armSwing, -15, 15, 8);
+
+                // Legs
+                ctx.fillStyle = '#333';
+                ctx.fillRect(-8, 10, 8, 20);
+                ctx.fillRect(0, 10, 8, 20);
+
+                ctx.restore();
+            }
+
+            function drawAGV(agv) {
+                const position = (animationTime * 0.2) % (width + 200) - 100;
+
+                ctx.save();
+
+                // AGV body
+                ctx.fillStyle = '#00ff88';
+                ctx.fillRect(position, agv.y, agv.width, agv.height);
+
+                // Cabin
+                ctx.fillStyle = '#00dd66';
+                ctx.fillRect(position + 20, agv.y - 20, 40, 20);
+
+                // Wheels
+                ctx.fillStyle = '#111';
+                ctx.beginPath();
+                ctx.arc(position + 30, agv.y + agv.height, 12, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(position + 90, agv.y + agv.height, 12, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Direction arrow
+                ctx.strokeStyle = '#ffff00';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(position + agv.width + 10, agv.y + agv.height / 2);
+                ctx.lineTo(position + agv.width + 25, agv.y + agv.height / 2);
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            function drawEnvironment() {
+                // Background
+                ctx.fillStyle = '#0f1827';
+                ctx.fillRect(0, 0, width, height);
+
+                // Grid floor
+                ctx.strokeStyle = 'rgba(0, 255, 136, 0.1)';
+                ctx.lineWidth = 1;
+                const gridSize = 50;
+                for (let i = 0; i < width; i += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i, height);
+                    ctx.stroke();
+                }
+                for (let i = 0; i < height; i += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, i);
+                    ctx.lineTo(width, i);
+                    ctx.stroke();
+                }
+
+                // Station markers
+                ctx.fillStyle = 'rgba(255, 50, 50, 0.2)';
+                for (let i = 0; i < 6; i++) {
+                    ctx.fillRect(100 + i * 200, 100, 80, 80);
+                }
+            }
+
+            function animate() {
+                drawEnvironment();
+
+                // Update robot arm angles
+                robots.forEach(robot => {
+                    robot.armAngle = Math.sin(animationTime * 0.01) * Math.PI / 3 + Math.PI / 4;
+                });
+
+                // Draw all elements
+                robots.forEach(drawRobot);
+                people.forEach(drawPerson);
+                drawAGV(agv);
+
+                // Draw status text
+                ctx.fillStyle = '#00ff88';
+                ctx.font = '14px Arial';
+                ctx.fillText(`Operating Robots: ${robots.length}`, 20, 30);
+                ctx.fillText(`Active Operators: ${people.length}`, 20, 50);
+                ctx.fillText(`AGV Status: Moving`, 20, 70);
+
+                animationTime++;
+                facilityAnimationId = requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+
+        window.closeFacility = closeFacility;
     </script>
 </body>
 </html>
