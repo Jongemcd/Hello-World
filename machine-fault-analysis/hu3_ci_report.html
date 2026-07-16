@@ -149,16 +149,19 @@ nav.toc a:hover { text-decoration: underline; }
 </style>
 
 <body class="viz-root">
-  <h1>HU3 Continuous Improvement Report: Real Downtime vs. Logging Noise</h1>
+  <h1>HU3 Continuous Improvement Report: True First-Fault Analysis</h1>
   <p class="subtitle">
-    Same method as the packaging-line report, applied to the HU3 machine's own fault/change log. HU3's data already
-    tags each event's severity in its ID (<code>Warning_</code> / <code>Alarm_</code> / <code>Fault_</code>) — that
-    tagging is used as the primary noise signal, layered with the same content-based rules (guard interlocks,
-    pre-warnings, procedural messages) used before, so the Pareto below shows only what a reliability engineer can
-    actually act on.
+    Revised version of the HU3 report. The first pass classified noise vs. real failure per logged row; this pass
+    fixes a deeper problem — many alarms (like the "main air valve pressure not present" fault that led the first
+    report) never actually <em>start</em> a stoppage. They fire as a downstream consequence <em>while</em> the
+    machine is already stopped for another reason, then get swept up in the same row-by-row count. This version
+    identifies each stoppage <strong>episode</strong> (from the moment <code>MachineStatus</code> flips 1→0 to the
+    moment it flips back to 1) and attributes the whole episode to whichever fault was active at the exact moment
+    it started — everything else that fires mid-episode is a cascade, not a cause.
   </p>
   <nav class="toc">
     <a href="#summary">Executive summary</a>
+    <a href="#correction">What changed and why</a>
     <a href="#hu3">HU3 breakdown</a>
     <a href="#plan">10-point action plan</a>
     <a href="#method">Classification method</a>
@@ -166,39 +169,65 @@ nav.toc a:hover { text-decoration: underline; }
 
   <div class="card" id="summary">
     <h2>Executive summary</h2>
-    <p class="body-text">Of the <strong>1,355.5 hours</strong> of HU3 downtime logged from Mar 11 to Jul 16, 2026,
-      <strong>1,069.8 hours (78.9%)</strong> reflects a genuine equipment or process failure — a much cleaner split
-      than the packaging line, where guard interlocks alone matched the real failure total. Here the noise is
-      smaller and more concentrated: <strong>Advisory / Maintenance Notice</strong> messages (recurring UPS-battery
-      check reminders and an undescriptive "SR Dependency list" flag) are 9.6%, guard/e-stop interlocks are 7.9%,
-      and operator/procedural plus pre-warning messages make up the remaining 2.6%.</p>
-    <p class="body-text">The cleaned Pareto is dominated by a single chronic issue: <strong>"Main air valve basic
-      machine pressure not present"</strong> accounts for <strong>590.4 hours — 55.2% of all real technical downtime,
-      and 43.6% of every hour of downtime logged on this machine</strong>, cleaned or not. At roughly 3.7 minutes per
-      occurrence across 9,533 events, this isn't sensor chatter (unlike a similar-sounding issue found on the
-      packaging line) — it's a sustained, recurring air-supply problem and the clear #1 priority below.</p>
+    <p class="body-text">Re-scoped to true stoppage episodes, HU3 logged <strong>16,179 stoppages</strong> totaling
+      <strong>1,143.3 hours</strong> from Mar 11 to Jul 16, 2026. Of that, <strong>634.5 hours (55.5%)</strong> is
+      attributable to a confirmed technical root cause — down from the 78.9% the first pass reported, because that
+      figure was crediting "Technical Failure" every time a real-sounding alarm fired mid-episode, even when
+      something else (a guard, a stop button, an advisory) had actually triggered the stop.</p>
+    <p class="body-text">The former #1 issue is gone entirely: <strong>"main air valve pressure not present" was the
+      true first fault in zero of its 9,525 occurrences</strong> — it is a 100% cascade alarm. The real #1 is
+      material exhaustion — <strong>"End of reel" plus "All rolls empty" together are 128.5 hours (20.3% of
+      confirmed technical downtime)</strong> — followed by reject-handling capacity, pickup-valve sensing, and
+      fork-position limit switches. Separately, a large chunk of episodes (18.7%, 214.3 hrs) start with a UPS-battery
+      or "SR Dependency list" advisory as the logged trigger — larger than any confirmed technical cause, and flagged
+      below for validation rather than taken at face value.</p>
     <div class="hero-stats">
-      <div class="stat"><div class="label">Total logged HU3 downtime</div><div class="value">1,355.5 hrs</div></div>
-      <div class="stat"><div class="label">Real technical failure</div><div class="value good">1,069.8 hrs</div><div class="sub">78.9% of logged time</div></div>
-      <div class="stat"><div class="label">Noise removed</div><div class="value accent">285.7 hrs</div><div class="sub">21.1% of logged time</div></div>
-      <div class="stat"><div class="label">Main air valve pressure issue</div><div class="value">590.4 hrs</div><div class="sub">55.2% of real technical downtime — the #1 issue</div></div>
+      <div class="stat"><div class="label">Total downtime, by episode</div><div class="value">1,143.3 hrs</div><div class="sub">16,179 stoppages</div></div>
+      <div class="stat"><div class="label">Confirmed technical root cause</div><div class="value good">634.5 hrs</div><div class="sub">55.5% of episode time</div></div>
+      <div class="stat"><div class="label">"Air valve pressure" as true cause</div><div class="value accent">0 hrs</div><div class="sub">was credited 590.4 hrs in the row-level pass</div></div>
+      <div class="stat"><div class="label">New #1: reel / roll exhaustion</div><div class="value">128.5 hrs</div><div class="sub">20.3% of confirmed technical downtime</div></div>
     </div>
   </div>
 
+  <div class="card" id="correction">
+    <h2>What changed, and why it matters</h2>
+    <p class="body-text">The first HU3 report summed each logged row's own duration and classified each row on its
+      own alarm text. That over-credits any alarm that happens to be logged frequently while the machine is
+      <em>already</em> stopped for something else. Concretely: of 9,525 "main air valve pressure not present" rows,
+      <strong>every single one</strong> occurred while <code>MachineStatus</code> was already 0 — none coincided with
+      the 1→0 transition that actually starts a stoppage. The likely mechanism: once the machine stops for any
+      reason, the pneumatic valve stops cycling, and the pressure sensor reads "not present" as a side effect — a
+      symptom of being stopped, not a cause of it.</p>
+    <p class="body-text">This version instead groups every stopped row into its stoppage episode (the run of
+      consecutive <code>MachineStatus = 0</code> rows between one 1→0 transition and the next 0→1), takes the fault
+      text logged <strong>at the transition itself</strong> as that episode's true first fault, and attributes the
+      <em>entire</em> episode's duration to that one fault — same 4-hour cap as before, now applied per episode
+      rather than per row, so multi-day episodes (weekends, extended planned stops) don't inflate whatever fault
+      happened to be active when they began. On average each episode carries 2.7 cascade rows before the machine
+      restarts; those are preserved in the supporting data as diagnostic context, not counted as separate causes.</p>
+  </div>
+
   <div class="card" id="hu3">
-    <h2>HU3: where the logged downtime actually goes</h2>
-    <p class="body-text">Every stopped-state row was classified using its <code>Warning_</code>/<code>Alarm_</code>/<code>Fault_</code>
-      severity tag plus content-based overrides (rules in the Methodology section below). Only "Technical Failure"
-      belongs in a reliability Pareto.</p>
+    <h2>HU3: where the true root causes actually are</h2>
+    <p class="body-text">Every stoppage <em>episode</em> was classified by its true first fault's text using the
+      <code>Warning_</code>/<code>Alarm_</code>/<code>Fault_</code> severity tag plus content-based overrides (rules
+      in the Methodology section below). Only "Technical Failure" belongs in a reliability Pareto.</p>
     <div id="master-cat-chart"></div>
     <div class="legend-line" id="master-cat-legend"></div>
-    <h3 style="margin-top:22px;">Cleaned HU3 Pareto — technical failures only, rolled up by failure family</h3>
-    <p class="body-text" style="color:var(--text-muted); font-size:12px;">Near-duplicate codes (e.g. the same sensor fault repeated across positions A/B) are grouped into one family. Raw per-code detail is in the supporting data.</p>
+    <div class="callout">
+      <strong>Worth validating, not yet acting on:</strong> "Advisory / Maintenance Notice" (18.7%, 214.3 hrs) is the
+      logged trigger for more episodes than any single confirmed technical fault. Battery-check and "SR Dependency
+      list" messages don't obviously explain a production stop on their own — before investing in a fix, confirm
+      with maintenance/operations logs whether these episodes had a real unlogged cause, or whether a UPS event
+      genuinely does knock the line down. See action item 2.
+    </div>
+    <h3 style="margin-top:22px;">Cleaned HU3 Pareto — confirmed technical root causes only, rolled up by failure family</h3>
+    <p class="body-text" style="color:var(--text-muted); font-size:12px;">Near-duplicate codes (e.g. the same sensor fault repeated across positions A/B) are grouped into one family. Raw per-code and per-episode detail is in the supporting data.</p>
     <div id="master-clean-chart"></div>
     <div class="callout">
-      <strong>Read this as the action list.</strong> The main air valve pressure fault alone (55.2%) dwarfs every
-      other real issue — see action item 1 below. The next largest are pickup-valve sensing (2.4%), the reject
-      ("bad parts box full") material-handling condition (1.9%), and reel-end material exhaustion (1.7%).
+      <strong>Read this as the action list.</strong> Reel-end and roll exhaustion (20.3% combined) is now the clear
+      #1 confirmed cause, followed by reject-box capacity (12.8%), pickup-valve sensing (10.6%), and fork
+      limit-switches (8.8%) — see action items 1 and 3–5 below.
     </div>
   </div>
 
@@ -213,11 +242,15 @@ nav.toc a:hover { text-decoration: underline; }
 
   <div class="card" id="method">
     <h2>Classification method (so you can adjust it)</h2>
-    <p class="body-text">HU3's fault codes already carry a severity prefix — <code>Warning_</code>,
-      <code>Alarm_</code>, or <code>Fault_</code> — assigned by the control system itself. That prefix is used as
-      the default signal (Warning → advisory/noise, Alarm/Fault → real), but content-based overrides run first and
-      win regardless of prefix, since the same physical condition can be logged under any of the three severities
-      depending on how long it persisted.</p>
+    <p class="body-text"><strong>Step 1 — find the true first fault.</strong> Rows are grouped into stoppage
+      episodes (consecutive <code>MachineStatus = 0</code> rows bounded by a 1→0 transition and the next 0→1). Only
+      the fault text logged at the 1→0 transition is classified and counted; every other row in the episode is a
+      cascade, kept in the supporting data but not scored.</p>
+    <p class="body-text"><strong>Step 2 — classify that fault.</strong> HU3's fault codes already carry a severity
+      prefix — <code>Warning_</code>, <code>Alarm_</code>, or <code>Fault_</code> — assigned by the control system
+      itself. That prefix is used as the default signal (Warning → advisory/noise, Alarm/Fault → real), but
+      content-based overrides run first and win regardless of prefix, since the same physical condition can be
+      logged under any of the three severities depending on how long it persisted.</p>
     <table class="methodology-table">
       <thead><tr><th>Bucket</th><th>What's in it</th><th>Example matches</th><th>Why excluded from the reliability Pareto</th></tr></thead>
       <tbody>
@@ -233,15 +266,16 @@ nav.toc a:hover { text-decoration: underline; }
       </tbody>
     </table>
     <p class="body-text" style="margin-top:14px; color:var(--text-muted); font-size:12px;">
-      One data-quality note: 1,119 stopped-state rows carry a bare <code>FirstFaultText</code> of <code>"0"</code>
-      instead of a proper <code>Warning_</code>/<code>Alarm_</code>/<code>Fault_</code> ID — nine of them are
-      actually "Safety guards not closed" (caught by the override above and correctly excluded) but most carry real,
-      undertagged fault text (Profibus, Sercos-bus, TCP, limit-switch faults). They're counted as Technical Failure
-      here but flagged separately as action item 9.
+      Two data-quality notes, both folded into action item 10: a bare <code>FirstFaultText</code> of <code>"0"</code>
+      appears on 1,119 stopped-state rows instead of a proper <code>Warning_</code>/<code>Alarm_</code>/<code>Fault_</code>
+      ID (a few are mistagged "Safety guards not closed" events, correctly caught by the override above; most carry
+      real, undertagged fault text). And the "SR Dependency list" message — now a top-5 true first fault at 18.7%
+      combined with the UPS-battery advisory — doesn't describe an actual condition, which is exactly why it needs
+      validation before anyone acts on it.
     </p>
   </div>
 
-<script id="data-blob" type="application/json">{"master_categories": [{"label": "Technical Failure", "hrs": 1069.8, "pct": 78.92044150256424}, {"label": "Advisory / Maintenance Notice", "hrs": 130.2, "pct": 9.608569862050944}, {"label": "Operator / Safety Interlock", "hrs": 106.7, "pct": 7.872975059594954}, {"label": "Operator / Procedural", "hrs": 26.2, "pct": 1.9313142505435816}, {"label": "Advisory / Warning (uncategorized)", "hrs": 14.1, "pct": 1.0424227621013389}, {"label": "Advisory / Pre-Warning", "hrs": 8.2, "pct": 0.6018188238113952}, {"label": "Baseline / Non-Fault Marker", "hrs": 0.3, "pct": 0.0224577393335248}], "master_clean": [{"label": "1A07-1B1 Main air valve basic machine pressure not present", "count": 9533, "hrs": 590.4}, {"label": "Valve in pickup position # not present", "count": 3844, "hrs": 42.7}, {"label": "Bad parts box is full, please empty!", "count": 4623, "hrs": 33.2}, {"label": "End of reel", "count": 1076, "hrs": 30.5}, {"label": "Flow monitor flow rate not OK", "count": 594, "hrs": 30.0}, {"label": "Limit switch fault Fork # in working position", "count": 2712, "hrs": 28.5}, {"label": "MSM-Bulge A: At least one station takes longer than maximum allowed", "count": 314, "hrs": 20.3}, {"label": "1A03-1K1:CN10 Fault in the Profibus system, for details see Diagnosis > Profibus, Address", "count": 28, "hrs": 19.8}, {"label": "System error of an axis, see fault message list", "count": 377, "hrs": 18.2}, {"label": "Fault in the controller, see Diagnosis > Servo", "count": 75, "hrs": 17.0}, {"label": "Flow monitor flowrate not ok", "count": 63, "hrs": 11.8}, {"label": "Group fault Heating counter plate A", "count": 43, "hrs": 10.7}, {"label": "Limit switch fault Counter plate in home position", "count": 109, "hrs": 9.2}, {"label": "Group fault Heating sealing head B", "count": 8, "hrs": 8.9}, {"label": "TCP fault. See diagnostic page", "count": 67, "hrs": 7.8}, {"label": "Other (219 lower-frequency technical fault families)", "count": 14008, "hrs": 190.8}], "action_plan": [{"title": "Root-cause the chronic main air valve / pressure fault", "tag": "Engineering project", "tagClass": "project", "desc": "\"Main air valve basic machine pressure not present\" is 590.4 hrs \u2014 55.2% of all real technical downtime and 43.6% of every logged hour on HU3, at ~3.7 min/event across 9,533 events (a sustained supply issue, not sensor chatter). Commission an air-supply audit: compressor capacity and duty cycle, regulator/valve condition, header sizing, and a leak survey; check for contention with other equipment sharing the same air main.", "impact": "590.4 hrs \u2014 more than half of all real technical downtime on this machine"}, {"title": "Inspect and PM the pickup-position valve sensing (A/B)", "tag": "Engineering project", "tagClass": "project", "desc": "\"Valve in pickup position A/B not present\" totals 42.6 hrs across 3,844 events. Add this sensor/valve pair to the PM schedule and check for wear, misalignment, or a marginal sensor threshold causing intermittent no-detects.", "impact": "42.6 hrs, 3,844 events \u2014 second-largest real technical issue"}, {"title": "Increase reject (\"bad parts box\") handling capacity", "tag": "Quick win", "tagClass": "quick", "desc": "\"Bad parts box is full, please empty!\" is 33.2 hrs across 4,623 events \u2014 logged at Warning severity but kept in the technical Pareto because it's a genuine material-handling stoppage. Fit a larger box or schedule more frequent empties, and consider a fill-level sensor that alerts before the box is completely full.", "impact": "33.2 hrs, 4,623 events; low-cost fix"}, {"title": "Convert reel-end stops from unplanned to planned", "tag": "Quick win", "tagClass": "quick", "desc": "\"End of reel\" totals 30.5 hrs across 1,076 events. Add advance low-material sensors and pre-stage replacement reels (or a dual-reel/splice stand) so this becomes a scheduled changeover instead of a surprise stop.", "impact": "30.5 hrs, 1,076 events"}, {"title": "Investigate flow-monitor faults alongside the air-pressure issue", "tag": "Engineering project", "tagClass": "project", "desc": "\"Flow monitor flow rate/flowrate not OK\" totals 41.8 hrs across 657 events on the same pneumatic system implicated in action #1 \u2014 check whether these share a root cause (supply pressure/flow instability) before treating them as separate problems.", "impact": "41.8 hrs, 657 events; likely linked to action #1"}, {"title": "PM the fork-position limit switches (A/B)", "tag": "Quick win", "tagClass": "quick", "desc": "\"Limit switch fault Fork A/B in working position\" totals 28.5 hrs across 2,712 events \u2014 a mechanical wear item. Add to the standard limit-switch PM/replacement cycle.", "impact": "28.5 hrs, 2,712 events"}, {"title": "Time-study the Bulge A station cycle time", "tag": "Engineering project", "tagClass": "project", "desc": "\"MSM-Bulge A: at least one station takes longer than maximum allowed/set cycle time\" totals 25.9 hrs across 890 events \u2014 a speed-loss pattern isolated to one station. Run a focused cycle-time study on Bulge A to find the bottleneck.", "impact": "25.9 hrs, 890 events, isolated to one station"}, {"title": "Audit controls/network comms faults", "tag": "Engineering project", "tagClass": "project", "desc": "Profibus, TCP, servo-controller, and PLC-to-robot comms faults together total roughly 48.8 hrs across ~186 events \u2014 infrequent individually but the same class of issue found on the packaging line's Sercos ring. Have controls engineering audit wiring, grounding, and network health across all three machines together.", "impact": "~48.8 hrs across 4 distinct comms-related fault codes"}, {"title": "Fix fault-code tagging for the bare-\"0\" and ambiguous entries", "tag": "Governance", "tagClass": "governance", "desc": "1,119 stopped-state rows carry a bare FirstFaultText of \"0\" instead of a proper Warning_/Alarm_/Fault_ ID (some are real faults like Profibus/Sercos/TCP errors, mistagged). Separately, retire the undescriptive \"SR Dependency list\" message in favor of whatever specific condition it's meant to summarize. Have controls engineering close both gaps in the fault dictionary.", "impact": "1,119 rows currently untraceable by proper reason code"}, {"title": "Schedule UPS battery replacement as preventive maintenance", "tag": "Governance", "tagClass": "governance", "desc": "\"Battery in external UPS must be checked\" (both UPS units) totals 130.2 hrs of logged advisory time across 14,705 occurrences \u2014 a recurring reminder, not a new fault each time. Replace the batteries proactively on a calendar schedule and stop treating this as an event-by-event alarm.", "impact": "130.2 hrs of recurring advisory noise, fully preventable"}]}</script>
+<script id="data-blob" type="application/json">{"master_categories": [{"label": "Technical Failure", "hrs": 634.5, "pct": 55.50090827055902}, {"label": "Advisory / Maintenance Notice", "hrs": 214.3, "pct": 18.748575887721667}, {"label": "Operator / Safety Interlock", "hrs": 147.0, "pct": 12.860346276355983}, {"label": "Operator / Procedural", "hrs": 71.3, "pct": 6.232704889408741}, {"label": "Advisory / Pre-Warning", "hrs": 44.3, "pct": 3.872957340652391}, {"label": "Advisory / Warning (uncategorized)", "hrs": 31.8, "pct": 2.784507335302188}], "master_clean": [{"label": "End of reel", "count": 764, "hrs": 105.2}, {"label": "Bad parts box is full, please empty!", "count": 713, "hrs": 81.3}, {"label": "Valve in pickup position # not present", "count": 2369, "hrs": 67.1}, {"label": "Limit switch fault Fork # in working position", "count": 1515, "hrs": 55.9}, {"label": "Web torn", "count": 484, "hrs": 24.0}, {"label": "All rolls empty - Please refill!", "count": 204, "hrs": 23.3}, {"label": "Vacuum splice module not present", "count": 490, "hrs": 23.0}, {"label": "MSM-Main: At least one station takes longer than the set cycle time allows", "count": 365, "hrs": 22.3}, {"label": "General error", "count": 327, "hrs": 13.2}, {"label": "Punch waste B not exhausted", "count": 182, "hrs": 11.4}, {"label": "Valve right inserted but not found - Check for valve on web", "count": 414, "hrs": 10.6}, {"label": "Hot printer A not ready for operation", "count": 51, "hrs": 8.5}, {"label": "Flow monitor flow rate not OK", "count": 308, "hrs": 8.0}, {"label": "Error Cylinder switch", "count": 162, "hrs": 7.9}, {"label": "MSM-Main: At least one station takes longer than maximum allowed", "count": 355, "hrs": 7.3}, {"label": "Other (108 lower-frequency technical fault families)", "count": 3909, "hrs": 165.2}], "action_plan": [{"title": "Reduce reel-end and roll-exhaustion stoppages", "tag": "Quick win", "tagClass": "quick", "desc": "\"End of reel\" and \"All rolls empty - please refill!\" together are the true first fault in 968 stoppage episodes, totaling 128.5 hrs (20.3% of confirmed technical downtime) \u2014 the largest confirmed cause once cascade alarms are removed. Add advance low-material sensors and pre-staged replacement reels/rolls (or a splice stand) so these become scheduled changeovers instead of surprise stops.", "impact": "128.5 hrs, 968 episodes \u2014 the #1 confirmed technical root cause"}, {"title": "Validate the UPS-battery / \"SR Dependency list\" advisory as a real trigger", "tag": "Governance", "tagClass": "governance", "desc": "1,615 episodes (214.3 hrs, 18.7% of all downtime \u2014 bigger than any single confirmed technical cause) start with a \"Battery in external UPS must be checked\" or \"SR Dependency list\" message logged at the exact moment the machine stops. Neither obviously explains a production stop by itself. Before investing in a fix, cross-check these episodes against maintenance/operations logs to determine whether an unlogged condition actually caused the stop, or whether a UPS event genuinely does take the line down.", "impact": "214.3 hrs, 1,615 episodes \u2014 larger than any confirmed technical issue, but unconfirmed"}, {"title": "Increase reject (\"bad parts box\") handling capacity", "tag": "Quick win", "tagClass": "quick", "desc": "\"Bad parts box is full, please empty!\" is the true first fault in 713 episodes, totaling 81.3 hrs (12.8%). Fit a larger box or schedule more frequent empties, and add a fill-level sensor that alerts before it's completely full.", "impact": "81.3 hrs, 713 episodes"}, {"title": "Inspect and PM the pickup-position valve sensing (A/B)", "tag": "Engineering project", "tagClass": "project", "desc": "\"Valve in pickup position A/B not present\" is the true first fault in 2,369 episodes, totaling 67.1 hrs (10.6%) \u2014 by far the highest episode count of any confirmed cause, suggesting a chronic intermittent condition rather than occasional hard failures. Check for wear, misalignment, or a marginal sensor threshold.", "impact": "67.1 hrs, 2,369 episodes \u2014 highest event count of any confirmed cause"}, {"title": "PM the fork-position limit switches (A/B)", "tag": "Quick win", "tagClass": "quick", "desc": "\"Limit switch fault Fork A/B in working position\" is the true first fault in 1,515 episodes, totaling 55.9 hrs (8.8%) \u2014 a mechanical wear item. Add to the standard limit-switch PM/replacement cycle.", "impact": "55.9 hrs, 1,515 episodes"}, {"title": "Investigate web tension/splice quality (\"Web torn\")", "tag": "Engineering project", "tagClass": "project", "desc": "\"Web torn\" is a true first fault in 484 episodes, totaling 24.0 hrs (3.8%) \u2014 this issue was invisible in the row-level pass, buried under air-valve cascade noise. Review web tension control and splice quality on the affected stations.", "impact": "24.0 hrs, 484 episodes; newly visible after the correction"}, {"title": "Inspect the vacuum splice module", "tag": "Engineering project", "tagClass": "project", "desc": "\"Vacuum splice module not present\" is a true first fault in 490 episodes, totaling 23.0 hrs (3.6%). Check vacuum supply, seals, and the module's presence sensor.", "impact": "23.0 hrs, 490 episodes"}, {"title": "Time-study the MSM station cycle time", "tag": "Engineering project", "tagClass": "project", "desc": "\"MSM-Main: at least one station takes longer than the set cycle time allows\" is a true first fault in 365 episodes, totaling 22.3 hrs (3.5%) \u2014 a speed-loss pattern that genuinely initiates stops, not just a background condition. Run a focused cycle-time study to find the bottleneck station.", "impact": "22.3 hrs, 365 episodes"}, {"title": "Run a Kaizen on guard/stop-button interlock frequency", "tag": "Quick win", "tagClass": "quick", "desc": "Unlike the air-valve alarm, guard and stop-button interlocks genuinely do initiate stops: 851 episodes (147.0 hrs, 12.9% of all logged downtime) start with one. Time-and-motion study on which interlock(s) trigger most and why, then poka-yoke or redesign the worst offenders \u2014 the same recommendation that paid off on the packaging line.", "impact": "147.0 hrs, 851 episodes \u2014 a real, frequent cause, worth streamlining"}, {"title": "Roll out the episode-based method plant-wide and close two tagging gaps", "tag": "Governance", "tagClass": "governance", "desc": "This correction changed the #1 finding from 590 hours to zero \u2014 any future Pareto here or on other machines (including the master/Schubert linkage report) should use true-first-fault-at-transition, not row-level summation. While rebuilding, fix two tagging gaps: 1,119 stopped rows carry a bare \"0\" FirstFaultText instead of a proper ID, and the undescriptive \"SR Dependency list\" message should be replaced with whatever specific condition it's meant to summarize.", "impact": "Prevents the single largest error found in this analysis from recurring"}]}</script>
 <script>
 (function(){
   "use strict";

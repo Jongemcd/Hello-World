@@ -26,10 +26,11 @@ schubert") and **@Fault_0085** ("Schubert – downstream machine not ready").
   and production-mode status), then presents the cleaned Paretos for both
   machines and a 10-point, impact-ranked action plan.
 - **`hu3_ci_report.html`** — same method applied to a third, independent
-  machine (HU3). HU3's own log already tags each fault's severity in its ID
-  (`Warning_` / `Alarm_` / `Fault_`); that tagging is used as the primary
-  noise signal, layered with the same content-based override rules (guard
-  interlocks, pre-warnings, procedural messages) as the other report.
+  machine (HU3), plus a further correction: alarms are now attributed to the
+  fault active at the exact `MachineStatus` 1→0 transition that starts each
+  stoppage **episode**, not summed row-by-row. Rows logged later in the same
+  episode (while still stopped) are cascade alarms, not independent causes —
+  this matters because it turned out to matter a lot (see below).
 
 ## Headline finding from the cleaned analysis (master/child)
 
@@ -41,15 +42,22 @@ Schubert") is the single largest true reliability issue at 221.1 hours —
 larger than the next nine real technical fault families combined. See
 `ci_report.html` for the full breakdown and action plan.
 
-## Headline finding from HU3
+## Headline finding from HU3 (episode-corrected)
 
-Of 1,355.5 hours of logged HU3 downtime, 1,069.8 hours (78.9%) is genuine
-technical failure — a much cleaner split than the packaging line. That
-cleaned Pareto is dominated by one chronic issue: "Main air valve basic
-machine pressure not present" is 590.4 hours — 55.2% of all real technical
-downtime, at ~3.7 minutes per occurrence (a sustained supply problem, not
-sensor chatter). See `hu3_ci_report.html` for the full breakdown and action
-plan.
+A first pass (summing every logged row) found "Main air valve pressure not
+present" as the #1 issue at 590.4 hours. Re-checked at the episode level —
+crediting only the fault active at the moment a stoppage actually
+started — that alarm turned out to be the true first fault in **zero** of
+its 9,525 occurrences; it only ever fires as a downstream consequence of
+already being stopped. Correctly attributed, HU3 logged 16,179 stoppage
+episodes totaling 1,143.3 hours, of which 634.5 hours (55.5%) trace to a
+confirmed technical root cause — led by reel/roll material exhaustion
+(128.5 hrs, 20.3%), reject-box capacity (81.3 hrs), and pickup-valve
+sensing (67.1 hrs). Separately, 214.3 hours (18.7%) of episodes start with
+a UPS-battery/"SR Dependency list" advisory as the logged trigger — flagged
+for validation rather than treated as confirmed. See `hu3_ci_report.html`
+for the full breakdown, the corrected 10-point action plan, and the
+methodology explanation.
 
 ## Method summary
 
