@@ -19,6 +19,22 @@ schubert") and **@Fault_0085** ("Schubert – downstream machine not ready").
   summary. Other sheets hold the supporting daily aggregates and the full
   event-level linkage (`LinkedEvents`, `LinkedEventChildDetail`). See the
   `ReadMe` sheet for methodology and a sheet-by-sheet guide.
+- **`ci_report.html`** — continuous-improvement report. Classifies every
+  alarm as genuine technical failure vs. noise (guard/door interlocks,
+  pre-warnings, operator/procedural messages, changeover mismatches, and —
+  on the child side — restart-sequence chatter and production-mode status),
+  then presents the cleaned Paretos for both machines and a 10-point,
+  impact-ranked action plan.
+
+## Headline finding from the cleaned analysis
+
+Of 2,426.7 hours of logged master downtime, only 979.0 hours (40.3%) is a
+genuine equipment/process failure — a nearly equal share (992.5 hrs, 40.9%)
+is guard/door interlocks (frequent, short, operator-driven, not
+breakdowns). Once noise is removed, @Fault_0081/@Fault_0085 ("waiting for
+Schubert") is the single largest true reliability issue at 221.1 hours —
+larger than the next nine real technical fault families combined. See
+`ci_report.html` for the full breakdown and action plan.
 
 ## Method summary
 

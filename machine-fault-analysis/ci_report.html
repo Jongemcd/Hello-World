@@ -1,0 +1,389 @@
+<title>Continuous Improvement Report — Downtime Noise Removed</title>
+<style>
+.viz-root {
+  color-scheme: light;
+  --surface-1:      #fcfcfb;
+  --surface-2:      #f9f9f7;
+  --text-primary:   #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted:     #898781;
+  --grid:           #e1e0d9;
+  --baseline:       #c3c2b7;
+  --border:         rgba(11,11,11,0.10);
+  --seq:            #2a78d6;
+  --seq-light:      #cde2fb;
+  --accent:         #eb6834;
+  --gray-1:         #b7b6ae;
+  --gray-2:         #cac9c2;
+  --gray-3:         #dddcd6;
+  --gray-4:         #efeeea;
+  --good:           #0ca30c;
+  --critical:       #d03b3b;
+  --card-bg:        #fcfcfb;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .viz-root {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --surface-2:      #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --grid:           #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --seq:            #3987e5;
+    --seq-light:      #184f95;
+    --accent:         #d95926;
+    --gray-1:         #5a5952;
+    --gray-2:         #454440;
+    --gray-3:         #35342f;
+    --gray-4:         #262622;
+    --good:           #0ca30c;
+    --critical:       #e66767;
+    --card-bg:        #1a1a19;
+  }
+}
+:root[data-theme="dark"] .viz-root {
+  color-scheme: dark;
+  --surface-1:      #1a1a19;
+  --surface-2:      #0d0d0d;
+  --text-primary:   #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted:     #898781;
+  --grid:           #2c2c2a;
+  --baseline:       #383835;
+  --border:         rgba(255,255,255,0.10);
+  --seq:            #3987e5;
+  --seq-light:      #184f95;
+  --accent:         #d95926;
+  --gray-1:         #5a5952;
+  --gray-2:         #454440;
+  --gray-3:         #35342f;
+  --gray-4:         #262622;
+  --good:           #0ca30c;
+  --critical:       #e66767;
+  --card-bg:        #1a1a19;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body.viz-root {
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 24px;
+  max-width: 1080px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+h1 { font-size: 22px; margin: 0 0 6px; }
+h2 { font-size: 17px; margin: 0 0 4px; }
+h3 { font-size: 14px; margin: 0 0 4px; }
+.subtitle { color: var(--text-secondary); font-size: 13.5px; margin: 0 0 22px; max-width: 820px; }
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+.hero-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin: 18px 0 4px; }
+@media (max-width: 820px) { .hero-stats { grid-template-columns: repeat(2,1fr); } }
+.stat { }
+.stat .label { font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px; }
+.stat .value { font-size: 24px; font-weight: 700; }
+.stat .sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.stat .value.accent { color: var(--accent); }
+.stat .value.good { color: var(--seq); }
+
+p.body-text { font-size: 13.5px; margin: 0 0 12px; }
+p.body-text:last-child { margin-bottom: 0; }
+.callout {
+  font-size: 12.5px; color: var(--text-secondary); background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 14px; margin-top: 12px;
+}
+.callout strong { color: var(--text-primary); }
+
+.legend-line { display: flex; gap: 14px; font-size: 11px; color: var(--text-secondary); margin: 10px 0 0; flex-wrap: wrap; }
+.legend-line .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+.bar-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+.bar-label { font-size: 12px; width: 320px; flex: 0 0 320px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { flex: 1; height: 20px; position: relative; }
+.bar-fill { height: 20px; border-radius: 4px; min-width: 2px; }
+.bar-value { font-size: 11.5px; color: var(--text-secondary); flex: 0 0 auto; min-width: 100px; font-variant-numeric: tabular-nums; }
+
+.action-plan { display: flex; flex-direction: column; gap: 14px; }
+.action { display: flex; gap: 14px; border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.action .num {
+  flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--seq); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;
+}
+.action.priority-1 .num { background: var(--accent); }
+.action-body { flex: 1; }
+.action-title { font-size: 13.5px; font-weight: 700; margin-bottom: 3px; }
+.action-tag {
+  display: inline-block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 2px 7px; border-radius: 999px; margin-left: 8px; background: var(--gray-4); color: var(--text-secondary);
+  vertical-align: middle;
+}
+.action-tag.quick { background: #dff2df; color: #0a5c0a; }
+.action-tag.project { background: #eef4fc; color: #184f95; }
+.action-tag.governance { background: #f5ecd9; color: #7a5a00; }
+@media (prefers-color-scheme: dark) {
+  .action-tag.quick { background: #0f2a0f; color: #6fd66f; }
+  .action-tag.project { background: #10233d; color: #7fb2ee; }
+  .action-tag.governance { background: #332a10; color: #e3c46a; }
+}
+.action-desc { font-size: 12.5px; color: var(--text-secondary); margin-bottom: 6px; }
+.action-impact { font-size: 11.5px; color: var(--text-muted); }
+.action-impact strong { color: var(--text-primary); }
+
+.methodology-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+.methodology-table th, .methodology-table td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+.methodology-table th { color: var(--text-secondary); font-weight: 600; }
+
+nav.toc { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; margin-bottom: 4px; }
+nav.toc a { color: var(--seq); text-decoration: none; }
+nav.toc a:hover { text-decoration: underline; }
+</style>
+
+<body class="viz-root">
+  <h1>Continuous Improvement Report: Real Downtime vs. Logging Noise</h1>
+  <p class="subtitle">
+    Same two datasets as before (master packaging machine + Schubert boxing machine), re-analyzed with a noise
+    filter applied. Guard/door interlocks, pre-warnings, operator/procedural messages, and machine-status chatter
+    are separated out from genuine equipment and process failures, so the Paretos below show only what a
+    reliability or process engineer can actually act on.
+  </p>
+  <nav class="toc">
+    <a href="#summary">Executive summary</a>
+    <a href="#master">Master breakdown</a>
+    <a href="#child">Child (Schubert) breakdown</a>
+    <a href="#linked">Linked root-cause Pareto</a>
+    <a href="#plan">10-point action plan</a>
+    <a href="#method">Classification method</a>
+  </nav>
+
+  <div class="card" id="summary">
+    <h2>Executive summary</h2>
+    <p class="body-text">Of the <strong>2,426.7 hours</strong> of master downtime logged over the ~7-month period,
+      only <strong>979.0 hours (40.3%)</strong> reflects a genuine equipment or process failure. An almost equal
+      share — <strong>992.5 hours (40.9%)</strong> — is guard/door interlocks opening, logged as "downtime" but
+      driven by very short, very frequent operator access events (53,089 of them, ~67 seconds each on average),
+      not breakdowns. The rest is pre-warnings (10.8%), operator/procedural messages (4.4%), and
+      changeover/recipe mismatches (3.5%).</p>
+    <p class="body-text">Once that noise is removed, the picture changes completely: <strong>@Fault_0081 / @Fault_0085
+      ("waiting for Schubert")</strong> is not just one line item among many — at 221.1 hours it is <strong>larger
+      than the next nine real technical fault families combined (160.3 hrs)</strong>. The master-child hand-off is,
+      by a wide margin, the single biggest true reliability problem on this line, which is exactly why the linked
+      root-cause breakdown in this report (and the dashboard built earlier) matters most.</p>
+    <div class="hero-stats">
+      <div class="stat"><div class="label">Total logged master downtime</div><div class="value">2,426.7 hrs</div></div>
+      <div class="stat"><div class="label">Real technical failure</div><div class="value good">979.0 hrs</div><div class="sub">40.3% of logged time</div></div>
+      <div class="stat"><div class="label">Guard/interlock + noise removed</div><div class="value accent">1,447.7 hrs</div><div class="sub">59.7% of logged time</div></div>
+      <div class="stat"><div class="label">Waiting-for-Schubert, cleaned</div><div class="value">221.1 hrs</div><div class="sub">22.6% of real technical downtime — the #1 issue</div></div>
+    </div>
+  </div>
+
+  <div class="card" id="master">
+    <h2>Master: where the logged downtime actually goes</h2>
+    <p class="body-text">Every stopped-state row was classified by its alarm text into one of five buckets (rules in the
+      Methodology section below). Only "Technical Failure" belongs in a reliability Pareto.</p>
+    <div id="master-cat-chart"></div>
+    <div class="legend-line" id="master-cat-legend"></div>
+    <h3 style="margin-top:22px;">Cleaned master Pareto — technical failures only, rolled up by failure family</h3>
+    <p class="body-text" style="color:var(--text-muted); font-size:12px;">Near-duplicate codes (e.g. the same sensor fault repeated across 5 sealing lanes) are grouped into one family. Raw per-lane detail is in the supporting data.</p>
+    <div id="master-clean-chart"></div>
+  </div>
+
+  <div class="card" id="child">
+    <h2>Child (Schubert): full alarm-stack breakdown</h2>
+    <p class="body-text">The Schubert alarm stack mixes real faults with production-mode status announcements
+      ("Production Male VAPRO...") and its own mirror-image of the master's "waiting" signal ("No product from
+      upstream machine") — together <strong>58.7%</strong> of every row logged. Once removed, a much smaller,
+      much more useful reliability Pareto remains.</p>
+    <div id="child-cat-chart"></div>
+    <div class="legend-line" id="child-cat-legend"></div>
+    <h3 style="margin-top:22px;">Cleaned Schubert Pareto — every technical alarm, whole log</h3>
+    <div id="child-clean-chart"></div>
+  </div>
+
+  <div class="card" id="linked">
+    <h2>Cleaned root-cause breakdown: what the child was really doing when the master stopped for @Fault_0081/@Fault_0085</h2>
+    <p class="body-text">This is the cleaned version of the linked breakdown from the earlier dashboard — every child
+      alarm inside a ±30s window of a master @Fault_0081/@Fault_0085 stoppage, with recovery-sequence chatter
+      ("T4 Unit group is being started," "Machine will be stopped," "Wait time") and status announcements filtered
+      out. <strong>Only 25.8%</strong> of the 103,130 raw linked alarms were an actual technical condition — the
+      rest was the child narrating its own restart sequence or production mode.</p>
+    <div id="linked-cat-chart"></div>
+    <div class="legend-line" id="linked-cat-legend"></div>
+    <h3 style="margin-top:22px;">Cleaned linked Pareto — the real reasons Schubert wasn't ready</h3>
+    <div id="linked-clean-chart"></div>
+    <div class="callout">
+      <strong>Read this as the action list.</strong> "Overflow container for grouping belt empty" (31.0%) and
+      "Local Sercos bus does not run as ring" (19.1%) alone account for half of every genuine child-side reason the
+      master had to wait — see action items 2 and 3 below.
+    </div>
+  </div>
+
+  <div class="card" id="plan">
+    <h2>10-point continuous improvement action plan</h2>
+    <p class="body-text" style="margin-bottom:16px;">Prioritized by measured impact in the cleaned data above. Tags:
+      <span class="action-tag quick">quick win</span> days-to-weeks, no capital;
+      <span class="action-tag project">engineering project</span> needs investigation/capital;
+      <span class="action-tag governance">governance</span> process/data-quality fix.</p>
+    <div class="action-plan" id="action-plan"></div>
+  </div>
+
+  <div class="card" id="method">
+    <h2>Classification method (so you can adjust it)</h2>
+    <p class="body-text">Every alarm/fault text was pattern-matched (case-insensitive) into the first bucket it
+      hits, in this order. Anything left over defaults to Technical Failure — the model only removes what it can
+      positively identify as noise.</p>
+    <table class="methodology-table">
+      <thead><tr><th>Bucket</th><th>What's in it</th><th>Example matches</th><th>Why excluded from the reliability Pareto</th></tr></thead>
+      <tbody>
+        <tr><td>Operator / Safety Interlock</td><td>Guards, doors, e-stops, stop button, safety circuits</td><td>"2B05-1K2 Guard not closed", "Emergency stop activated"</td><td>Deliberate operator/safety action, not an equipment failure</td></tr>
+        <tr><td>Advisory / Pre-Warning</td><td>Anything with "pre-warning" / "prewarning"</td><td>"Printer left, pre-warning low ribbon"</td><td>A leading indicator before the real event, not the failure itself</td></tr>
+        <tr><td>Operator / Procedural</td><td>Manual mode selection, data entry, manual blocks</td><td>"Entered Data at the HMI were not accepted", "Manual axis positioning is active"</td><td>Operator interaction, not a breakdown</td></tr>
+        <tr><td>Changeover / Recipe Setup</td><td>Format/recipe mismatches</td><td>"Format not equal", "Recipe dowload... error"</td><td>Setup/changeover issue, tracked separately from reliability loss</td></tr>
+        <tr><td>Recovery / Sequence Status (child only)</td><td>The machine narrating its own restart</td><td>"T4 Unit group is being started", "Wait time", "Compressed air is being built up"</td><td>Consequence of a stop, not a cause</td></tr>
+        <tr><td>Production Mode Status (child only)</td><td>What's running / the "no product from upstream" mirror signal</td><td>"Production Male VAPRO 25-ct/30-ct", "No product from upstream machine"</td><td>Status announcement, or the master's own fault reflected back — not an independent cause</td></tr>
+        <tr><td><strong>Technical Failure</strong></td><td>Everything else, including anything with no pattern match</td><td>"Main air valve pressure not present", "Overflow container empty", "Local Sercos bus does not run as ring"</td><td><strong>This is the Pareto that belongs in a reliability review</strong></td></tr>
+      </tbody>
+    </table>
+    <p class="body-text" style="margin-top:14px; color:var(--text-muted); font-size:12px;">
+      One data-quality note: 37,900 master rows (about 10% of all stopped-state rows) carry a raw diagnostic string
+      instead of a proper <code>@Fault_xxxx</code> code (e.g. "2A03-1K1 Profibus fault," "PacDrive fault") — these
+      are real technical faults but were never mapped into the standard reason-code taxonomy. They're counted as
+      Technical Failure here but flagged separately as action item 8.
+    </p>
+  </div>
+
+<script id="data-blob" type="application/json">{"master_categories": [{"label": "Operator / Safety Interlock", "hrs": 992.5, "pct": 40.89989791038485}, {"label": "Technical Failure", "hrs": 979.0, "pct": 40.3441195586534}, {"label": "Advisory / Pre-Warning", "hrs": 262.6, "pct": 10.823371417768373}, {"label": "Operator / Procedural", "hrs": 106.8, "pct": 4.399498900155829}, {"label": "Changeover / Recipe Setup", "hrs": 85.7, "pct": 3.53311221303754}], "master_clean": [{"label": "Line stop - waiting for schubert", "count": 7337, "hrs": 201.3}, {"label": "Please open the pack and remove catheter in sealing lane #", "count": 8206, "hrs": 75.7}, {"label": "Product detection fault after cutting lane #", "count": 6292, "hrs": 60.0}, {"label": "Product not in correct position lane # - Please check product/sensor", "count": 4137, "hrs": 36.3}, {"label": "Limit switch fault Unload TIP lane # closed", "count": 1646, "hrs": 21.6}, {"label": "Schubert - Downstream machine not ready", "count": 6259, "hrs": 19.8}, {"label": "2A07-1B1 Main air valve basic machine pressure not present", "count": 39132, "hrs": 17.0}, {"label": "Cap area not empty", "count": 1544, "hrs": 17.0}, {"label": "Reject fault lane # - Remove product after reject", "count": 2021, "hrs": 17.0}, {"label": "PMK is empty", "count": 403, "hrs": 15.0}, {"label": "Axis has reached adjusted current limit", "count": 1370, "hrs": 14.7}, {"label": "/80-Kaon not ready", "count": 464, "hrs": 14.5}, {"label": "2A01-5M1 Waste extraction system container full or flap opened", "count": 250, "hrs": 14.3}, {"label": "Error by cap reassemble, please check station 090", "count": 1338, "hrs": 14.0}, {"label": "Edge trim broken lane #", "count": 1056, "hrs": 13.8}, {"label": "Other (18,106 lower-frequency technical fault codes)", "count": 100380, "hrs": 427.1}], "child_categories": [{"label": "Production Mode Status", "count": 355714, "pct": 58.73231041536986}, {"label": "Technical Failure", "count": 204362, "pct": 33.742423466902665}, {"label": "Recovery / Sequence Status", "count": 42945, "pct": 7.090693846146226}, {"label": "Operator / Procedural", "count": 2165, "pct": 0.3574654133637578}, {"label": "Operator / Safety Interlock", "count": 467, "pct": 0.0771068582174941}], "child_clean": [{"label": "Overflow container for grouping belt empty", "count": 91100}, {"label": "Local Sercos bus does not run as ring ==> Line/Double line", "count": 60227}, {"label": "Refill magazine", "count": 25103}, {"label": "Refill magazine for literature on Track 1", "count": 9216}, {"label": "Max. position on good discharge", "count": 4058}, {"label": "Refill glue", "count": 1705}, {"label": "Overflow container for product belt empty", "count": 1323}, {"label": "Remove literature on Track 1 from pick-up magazine", "count": 942}, {"label": "F2_203# Literature on Track 2 lost before placement", "count": 589}, {"label": "Turning station DOWN: Empty Transmodul", "count": 536}, {"label": "F4_402# Product lost before placement", "count": 385}, {"label": "Magazine for literature on Track 2: Fault in feed", "count": 303}, {"label": "Warning belt running crooked", "count": 273}, {"label": "Magazine for literature on Track 1: Fault in feed", "count": 260}, {"label": "Check label position for side label", "count": 210}, {"label": "Other (175 lower-frequency alarm types)", "count": 8132}], "linked_categories": [{"label": "Recovery / Sequence Status", "count": 50248, "pct": 48.72297100746631}, {"label": "Technical Failure", "count": 26565, "pct": 25.7587510908562}, {"label": "Production Mode Status", "count": 25484, "pct": 24.71055948802482}, {"label": "Operator / Procedural", "count": 491, "pct": 0.4760981285755842}, {"label": "Operator / Safety Interlock", "count": 342, "pct": 0.3316202850770872}], "linked_clean": [{"label": "Overflow container for grouping belt empty", "count": 7082}, {"label": "Local Sercos bus does not run as ring ==> Line/Double line", "count": 4357}, {"label": "Refill magazine", "count": 1813}, {"label": "Refill magazine for literature on Track 1", "count": 1318}, {"label": "Remove literature on Track 1 from pick-up magazine", "count": 1150}, {"label": "F2_203# Literature on Track 2 lost before placement", "count": 920}, {"label": "Max. position on good discharge", "count": 917}, {"label": "F4_402# Product lost before placement", "count": 605}, {"label": "Turning station DOWN: Empty Transmodul", "count": 570}, {"label": "Magazine for literature on Track 2: Fault in feed", "count": 374}, {"label": "Magazine for literature on Track 1: Fault in feed", "count": 299}, {"label": "Check label position for side label", "count": 295}, {"label": "Other (133 lower-frequency alarm types)", "count": 3165}], "action_plan": [{"title": "Decouple the master\u2013Schubert hand-off with buffer capacity", "tag": "Engineering project", "tagClass": "project", "desc": "@Fault_0081/@Fault_0085 (\"waiting for Schubert\") totals 221.1 hrs \u2014 22.6% of all real technical downtime, more than the next nine technical fault families combined (160.3 hrs). Commission a line-balancing study on accumulation/buffer capacity between the two machines so short Schubert hiccups stop causing full master stops.", "impact": "221.1 hrs, the single largest true reliability loss on the line"}, {"title": "Fix the grouping-belt overflow container", "tag": "Engineering project", "tagClass": "project", "desc": "\"Overflow container for grouping belt empty\" is 31.0% of every real reason Schubert wasn't ready (7,082 linked occurrences) and 91,100 occurrences machine-wide. Review container sizing/evacuation frequency with the OEM and add an early-warning threshold before it triggers a stop.", "impact": "31.0% of cleaned linked root causes"}, {"title": "Investigate the Sercos ring network fault", "tag": "Engineering project", "tagClass": "project", "desc": "\"Local Sercos bus does not run as ring\" is 19.1% of linked root causes (4,357 occurrences) and 60,227 machine-wide \u2014 a recurring fieldbus/network fault this frequent points to a real wiring, connector, grounding, or EMI issue, not a one-off. Have controls engineering inspect the ring topology and cabling.", "impact": "19.1% of cleaned linked root causes; comms fault, not wear-and-tear"}, {"title": "Convert magazine refills from unplanned to planned", "tag": "Quick win", "tagClass": "quick", "desc": "Refill magazine + Refill magazine (Track 1) + Refill glue together are ~14% of linked root causes and ~36,000 occurrences machine-wide. Add low-level sensors with an advance operator alert, or dual/hot-swap magazines, so these become scheduled top-ups instead of surprise stops.", "impact": "~14% of cleaned linked root causes; high event count, low effort to fix"}, {"title": "Audit the literature/product pick-and-place mechanism", "tag": "Engineering project", "tagClass": "project", "desc": "\"Literature lost before placement\" (F2_203) and \"Product lost before placement\" (F4_402) combine for ~6.7% of linked root causes. Run a focused PM/calibration review of the vacuum pickup and placement heads, including airflow and static checks.", "impact": "~6.7% of cleaned linked root causes"}, {"title": "Run a Kaizen on guard/door interlock frequency", "tag": "Quick win", "tagClass": "quick", "desc": "Guard/door interlocks are 40.9% of ALL logged master downtime \u2014 992.5 hrs across 53,089 events, ~67 seconds each. Not a breakdown, but the single largest use of logged downtime on the whole line. Time-and-motion study on which guard(s) open most and why (jam clearing, routine access, changeover), then poka-yoke or redesign the worst offenders.", "impact": "992.5 hrs \u2014 the largest bucket in the entire raw log, larger than all technical failure combined"}, {"title": "Fix the air-pressure sensor chatter", "tag": "Quick win", "tagClass": "quick", "desc": "\"Main air valve pressure not present\" (@Fault_0040 + its PLC twin) fires 68,150 times but averages only 1.57 seconds per event \u2014 signal bounce or a marginal air supply, not sustained failures. Add debounce/filter logic to the alarm and inspect the regulator/accumulator for pressure ripple.", "impact": "68,150 events, ~29.7 hrs \u2014 cheap fix, removes long-tail noise from every future Pareto"}, {"title": "Address the top mechanical wear items", "tag": "Engineering project", "tagClass": "project", "desc": "After the hand-off and Sercos issues, the next real technical items are cap-area jams, PMK/waste-container material handling, axis current-limit faults, gripper/limit-switch faults, and edge-trim breaks \u2014 each 1.4\u20131.7% of technical downtime. Bundle these into the next PM cycle as a defined \"top mechanical wear\" work order list.", "impact": "~10% of technical downtime across 8 distinct fault families"}, {"title": "Standardize fault-code tagging for untagged technical faults", "tag": "Governance", "tagClass": "governance", "desc": "37,900 master rows (~10% of stopped-state rows) carry a raw diagnostic string (Profibus fault, ASI slave error, PacDrive fault, TCP fault) instead of a proper @Fault_xxxx code \u2014 real faults invisible to standard reason-code reporting. Have controls engineering map these into the fault dictionary.", "impact": "~10% of stopped-state rows currently untraceable by reason code"}, {"title": "Formalize this classification as the ongoing downtime taxonomy", "tag": "Governance", "tagClass": "governance", "desc": "Bake the five-bucket split used in this report (Technical Failure / Interlock / Pre-Warning / Procedural / Changeover) into the OEE reason-code master table, and report Technical Reliability Downtime as its own weekly KPI \u2014 separate from interlocks and changeover \u2014 with the cleaned @Fault_0081/@Fault_0085 linkage tracked as a named top-line metric with an improvement target.", "impact": "Makes every future Pareto correct by construction, no after-the-fact cleaning needed"}]}</script>
+<script>
+(function(){
+  "use strict";
+  const DATA = JSON.parse(document.getElementById('data-blob').textContent);
+
+  function fmtNum(n){ return Math.round(n).toLocaleString(); }
+
+  function renderBars(containerId, rows, opts){
+    opts = opts || {};
+    const el = document.getElementById(containerId);
+    el.innerHTML = '';
+    const max = Math.max(1, ...rows.map(r => r.value));
+    for (const r of rows){
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      const pct = (r.value / max) * 100;
+      const label = document.createElement('div'); label.className = 'bar-label'; label.textContent = r.label; label.title = r.label;
+      const track = document.createElement('div'); track.className = 'bar-track';
+      const fill = document.createElement('div'); fill.className = 'bar-fill';
+      fill.style.width = Math.max(pct, 0.5) + '%';
+      fill.style.background = r.color || 'var(--seq)';
+      track.appendChild(fill);
+      const val = document.createElement('div'); val.className = 'bar-value'; val.textContent = r.valueLabel;
+      row.append(label, track, val);
+      el.appendChild(row);
+    }
+  }
+
+  function renderLegend(containerId, items){
+    const el = document.getElementById(containerId);
+    el.innerHTML = '';
+    for (const it of items){
+      const span = document.createElement('span');
+      const sw = document.createElement('span'); sw.className = 'sw'; sw.style.background = it.color;
+      span.appendChild(sw);
+      span.appendChild(document.createTextNode(it.label));
+      el.appendChild(span);
+    }
+  }
+
+  // ---- Master category breakdown (emphasis: Technical Failure highlighted) ----
+  {
+    const cats = DATA.master_categories;
+    const rows = cats.map(c => ({
+      label: c.label, value: c.hrs,
+      valueLabel: fmtNum(c.hrs) + ' hrs (' + c.pct.toFixed(1) + '%)',
+      color: c.label === 'Technical Failure' ? 'var(--seq)' : 'var(--gray-2)'
+    }));
+    renderBars('master-cat-chart', rows);
+    renderLegend('master-cat-legend', [
+      {label:'Technical Failure (the real Pareto)', color:'var(--seq)'},
+      {label:'Everything else (noise buckets — see table below)', color:'var(--gray-2)'}
+    ]);
+  }
+
+  // ---- Master cleaned Pareto ----
+  {
+    const rows = DATA.master_clean.map(c => ({ label: c.label, value: c.hrs, valueLabel: fmtNum(c.hrs) + ' hrs (' + fmtNum(c.count) + ' events)', color: 'var(--seq)' }));
+    renderBars('master-clean-chart', rows);
+  }
+
+  // ---- Child category breakdown ----
+  {
+    const cats = DATA.child_categories;
+    const rows = cats.map(c => ({
+      label: c.label, value: c.count,
+      valueLabel: fmtNum(c.count) + ' (' + c.pct.toFixed(1) + '%)',
+      color: c.label === 'Technical Failure' ? 'var(--seq)' : 'var(--gray-2)'
+    }));
+    renderBars('child-cat-chart', rows);
+    renderLegend('child-cat-legend', [
+      {label:'Technical Failure (the real Pareto)', color:'var(--seq)'},
+      {label:'Everything else (status/sequence/procedural noise)', color:'var(--gray-2)'}
+    ]);
+  }
+
+  // ---- Child cleaned Pareto (overall) ----
+  {
+    const rows = DATA.child_clean.map(c => ({ label: c.label, value: c.count, valueLabel: fmtNum(c.count), color: 'var(--seq)' }));
+    renderBars('child-clean-chart', rows);
+  }
+
+  // ---- Linked category breakdown ----
+  {
+    const cats = DATA.linked_categories;
+    const rows = cats.map(c => ({
+      label: c.label, value: c.count,
+      valueLabel: fmtNum(c.count) + ' (' + c.pct.toFixed(1) + '%)',
+      color: c.label === 'Technical Failure' ? 'var(--accent)' : 'var(--gray-2)'
+    }));
+    renderBars('linked-cat-chart', rows);
+    renderLegend('linked-cat-legend', [
+      {label:'Technical Failure (the real root causes)', color:'var(--accent)'},
+      {label:'Recovery chatter / status noise', color:'var(--gray-2)'}
+    ]);
+  }
+
+  // ---- Linked cleaned Pareto ----
+  {
+    const rows = DATA.linked_clean.map(c => ({ label: c.label, value: c.count, valueLabel: fmtNum(c.count), color: 'var(--accent)' }));
+    renderBars('linked-clean-chart', rows);
+  }
+
+  // ---- Action plan ----
+  {
+    const el = document.getElementById('action-plan');
+    el.innerHTML = '';
+    DATA.action_plan.forEach((a, i) => {
+      const card = document.createElement('div');
+      card.className = 'action' + (i === 0 ? ' priority-1' : '');
+      const num = document.createElement('div'); num.className = 'num'; num.textContent = (i+1);
+      const body = document.createElement('div'); body.className = 'action-body';
+      const title = document.createElement('div'); title.className = 'action-title';
+      title.textContent = a.title;
+      const tag = document.createElement('span'); tag.className = 'action-tag ' + a.tagClass; tag.textContent = a.tag;
+      title.appendChild(tag);
+      const desc = document.createElement('div'); desc.className = 'action-desc'; desc.textContent = a.desc;
+      const impact = document.createElement('div'); impact.className = 'action-impact'; impact.innerHTML = 'Impact: <strong>' + a.impact + '</strong>';
+      body.append(title, desc, impact);
+      card.append(num, body);
+      el.appendChild(card);
+    });
+  }
+})();
+</script>
