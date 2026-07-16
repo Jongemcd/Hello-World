@@ -1,0 +1,327 @@
+<title>HU3 Continuous Improvement Report — Downtime Noise Removed</title>
+<style>
+.viz-root {
+  color-scheme: light;
+  --surface-1:      #fcfcfb;
+  --surface-2:      #f9f9f7;
+  --text-primary:   #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted:     #898781;
+  --grid:           #e1e0d9;
+  --baseline:       #c3c2b7;
+  --border:         rgba(11,11,11,0.10);
+  --seq:            #2a78d6;
+  --seq-light:      #cde2fb;
+  --accent:         #eb6834;
+  --gray-1:         #b7b6ae;
+  --gray-2:         #cac9c2;
+  --gray-3:         #dddcd6;
+  --gray-4:         #efeeea;
+  --good:           #0ca30c;
+  --critical:       #d03b3b;
+  --card-bg:        #fcfcfb;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .viz-root {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --surface-2:      #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --grid:           #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --seq:            #3987e5;
+    --seq-light:      #184f95;
+    --accent:         #d95926;
+    --gray-1:         #5a5952;
+    --gray-2:         #454440;
+    --gray-3:         #35342f;
+    --gray-4:         #262622;
+    --good:           #0ca30c;
+    --critical:       #e66767;
+    --card-bg:        #1a1a19;
+  }
+}
+:root[data-theme="dark"] .viz-root {
+  color-scheme: dark;
+  --surface-1:      #1a1a19;
+  --surface-2:      #0d0d0d;
+  --text-primary:   #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted:     #898781;
+  --grid:           #2c2c2a;
+  --baseline:       #383835;
+  --border:         rgba(255,255,255,0.10);
+  --seq:            #3987e5;
+  --seq-light:      #184f95;
+  --accent:         #d95926;
+  --gray-1:         #5a5952;
+  --gray-2:         #454440;
+  --gray-3:         #35342f;
+  --gray-4:         #262622;
+  --good:           #0ca30c;
+  --critical:       #e66767;
+  --card-bg:        #1a1a19;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body.viz-root {
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 24px;
+  max-width: 1080px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+h1 { font-size: 22px; margin: 0 0 6px; }
+h2 { font-size: 17px; margin: 0 0 4px; }
+h3 { font-size: 14px; margin: 0 0 4px; }
+.subtitle { color: var(--text-secondary); font-size: 13.5px; margin: 0 0 22px; max-width: 820px; }
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+.hero-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin: 18px 0 4px; }
+@media (max-width: 820px) { .hero-stats { grid-template-columns: repeat(2,1fr); } }
+.stat { }
+.stat .label { font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px; }
+.stat .value { font-size: 24px; font-weight: 700; }
+.stat .sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.stat .value.accent { color: var(--accent); }
+.stat .value.good { color: var(--seq); }
+
+p.body-text { font-size: 13.5px; margin: 0 0 12px; }
+p.body-text:last-child { margin-bottom: 0; }
+.callout {
+  font-size: 12.5px; color: var(--text-secondary); background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 14px; margin-top: 12px;
+}
+.callout strong { color: var(--text-primary); }
+
+.legend-line { display: flex; gap: 14px; font-size: 11px; color: var(--text-secondary); margin: 10px 0 0; flex-wrap: wrap; }
+.legend-line .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+.bar-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+.bar-label { font-size: 12px; width: 320px; flex: 0 0 320px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { flex: 1; height: 20px; position: relative; }
+.bar-fill { height: 20px; border-radius: 4px; min-width: 2px; }
+.bar-value { font-size: 11.5px; color: var(--text-secondary); flex: 0 0 auto; min-width: 100px; font-variant-numeric: tabular-nums; }
+
+.action-plan { display: flex; flex-direction: column; gap: 14px; }
+.action { display: flex; gap: 14px; border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.action .num {
+  flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--seq); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;
+}
+.action.priority-1 .num { background: var(--accent); }
+.action-body { flex: 1; }
+.action-title { font-size: 13.5px; font-weight: 700; margin-bottom: 3px; }
+.action-tag {
+  display: inline-block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 2px 7px; border-radius: 999px; margin-left: 8px; background: var(--gray-4); color: var(--text-secondary);
+  vertical-align: middle;
+}
+.action-tag.quick { background: #dff2df; color: #0a5c0a; }
+.action-tag.project { background: #eef4fc; color: #184f95; }
+.action-tag.governance { background: #f5ecd9; color: #7a5a00; }
+@media (prefers-color-scheme: dark) {
+  .action-tag.quick { background: #0f2a0f; color: #6fd66f; }
+  .action-tag.project { background: #10233d; color: #7fb2ee; }
+  .action-tag.governance { background: #332a10; color: #e3c46a; }
+}
+.action-desc { font-size: 12.5px; color: var(--text-secondary); margin-bottom: 6px; }
+.action-impact { font-size: 11.5px; color: var(--text-muted); }
+.action-impact strong { color: var(--text-primary); }
+
+.methodology-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+.methodology-table th, .methodology-table td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+.methodology-table th { color: var(--text-secondary); font-weight: 600; }
+
+nav.toc { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; margin-bottom: 4px; }
+nav.toc a { color: var(--seq); text-decoration: none; }
+nav.toc a:hover { text-decoration: underline; }
+</style>
+
+<body class="viz-root">
+  <h1>HU3 Continuous Improvement Report: Real Downtime vs. Logging Noise</h1>
+  <p class="subtitle">
+    Same method as the packaging-line report, applied to the HU3 machine's own fault/change log. HU3's data already
+    tags each event's severity in its ID (<code>Warning_</code> / <code>Alarm_</code> / <code>Fault_</code>) — that
+    tagging is used as the primary noise signal, layered with the same content-based rules (guard interlocks,
+    pre-warnings, procedural messages) used before, so the Pareto below shows only what a reliability engineer can
+    actually act on.
+  </p>
+  <nav class="toc">
+    <a href="#summary">Executive summary</a>
+    <a href="#hu3">HU3 breakdown</a>
+    <a href="#plan">10-point action plan</a>
+    <a href="#method">Classification method</a>
+  </nav>
+
+  <div class="card" id="summary">
+    <h2>Executive summary</h2>
+    <p class="body-text">Of the <strong>1,355.5 hours</strong> of HU3 downtime logged from Mar 11 to Jul 16, 2026,
+      <strong>1,069.8 hours (78.9%)</strong> reflects a genuine equipment or process failure — a much cleaner split
+      than the packaging line, where guard interlocks alone matched the real failure total. Here the noise is
+      smaller and more concentrated: <strong>Advisory / Maintenance Notice</strong> messages (recurring UPS-battery
+      check reminders and an undescriptive "SR Dependency list" flag) are 9.6%, guard/e-stop interlocks are 7.9%,
+      and operator/procedural plus pre-warning messages make up the remaining 2.6%.</p>
+    <p class="body-text">The cleaned Pareto is dominated by a single chronic issue: <strong>"Main air valve basic
+      machine pressure not present"</strong> accounts for <strong>590.4 hours — 55.2% of all real technical downtime,
+      and 43.6% of every hour of downtime logged on this machine</strong>, cleaned or not. At roughly 3.7 minutes per
+      occurrence across 9,533 events, this isn't sensor chatter (unlike a similar-sounding issue found on the
+      packaging line) — it's a sustained, recurring air-supply problem and the clear #1 priority below.</p>
+    <div class="hero-stats">
+      <div class="stat"><div class="label">Total logged HU3 downtime</div><div class="value">1,355.5 hrs</div></div>
+      <div class="stat"><div class="label">Real technical failure</div><div class="value good">1,069.8 hrs</div><div class="sub">78.9% of logged time</div></div>
+      <div class="stat"><div class="label">Noise removed</div><div class="value accent">285.7 hrs</div><div class="sub">21.1% of logged time</div></div>
+      <div class="stat"><div class="label">Main air valve pressure issue</div><div class="value">590.4 hrs</div><div class="sub">55.2% of real technical downtime — the #1 issue</div></div>
+    </div>
+  </div>
+
+  <div class="card" id="hu3">
+    <h2>HU3: where the logged downtime actually goes</h2>
+    <p class="body-text">Every stopped-state row was classified using its <code>Warning_</code>/<code>Alarm_</code>/<code>Fault_</code>
+      severity tag plus content-based overrides (rules in the Methodology section below). Only "Technical Failure"
+      belongs in a reliability Pareto.</p>
+    <div id="master-cat-chart"></div>
+    <div class="legend-line" id="master-cat-legend"></div>
+    <h3 style="margin-top:22px;">Cleaned HU3 Pareto — technical failures only, rolled up by failure family</h3>
+    <p class="body-text" style="color:var(--text-muted); font-size:12px;">Near-duplicate codes (e.g. the same sensor fault repeated across positions A/B) are grouped into one family. Raw per-code detail is in the supporting data.</p>
+    <div id="master-clean-chart"></div>
+    <div class="callout">
+      <strong>Read this as the action list.</strong> The main air valve pressure fault alone (55.2%) dwarfs every
+      other real issue — see action item 1 below. The next largest are pickup-valve sensing (2.4%), the reject
+      ("bad parts box full") material-handling condition (1.9%), and reel-end material exhaustion (1.7%).
+    </div>
+  </div>
+
+  <div class="card" id="plan">
+    <h2>10-point continuous improvement action plan</h2>
+    <p class="body-text" style="margin-bottom:16px;">Prioritized by measured impact in the cleaned data above. Tags:
+      <span class="action-tag quick">quick win</span> days-to-weeks, no capital;
+      <span class="action-tag project">engineering project</span> needs investigation/capital;
+      <span class="action-tag governance">governance</span> process/data-quality fix.</p>
+    <div class="action-plan" id="action-plan"></div>
+  </div>
+
+  <div class="card" id="method">
+    <h2>Classification method (so you can adjust it)</h2>
+    <p class="body-text">HU3's fault codes already carry a severity prefix — <code>Warning_</code>,
+      <code>Alarm_</code>, or <code>Fault_</code> — assigned by the control system itself. That prefix is used as
+      the default signal (Warning → advisory/noise, Alarm/Fault → real), but content-based overrides run first and
+      win regardless of prefix, since the same physical condition can be logged under any of the three severities
+      depending on how long it persisted.</p>
+    <table class="methodology-table">
+      <thead><tr><th>Bucket</th><th>What's in it</th><th>Example matches</th><th>Why excluded from the reliability Pareto</th></tr></thead>
+      <tbody>
+        <tr><td>Operator / Safety Interlock</td><td>Guards, e-stops, stop button, safety circuits (any severity prefix)</td><td>"1200 Safety guards not closed", "An emergency stop is activated"</td><td>Deliberate operator/safety action, not an equipment failure</td></tr>
+        <tr><td>Advisory / Pre-Warning</td><td>"pre-warning" / "imminent" leading indicators</td><td>"Imminent overload of a servo axis"</td><td>A leading indicator before the real event, not the failure itself</td></tr>
+        <tr><td>Advisory / Maintenance Notice</td><td>Recurring PM reminders with no specific fault to fix now</td><td>"Battery in external UPS must be checked", "SR Dependency list"</td><td>A standing maintenance reminder, not a stoppage cause in itself</td></tr>
+        <tr><td>Operator / Procedural</td><td>Manual mode, HMI locks</td><td>"The start of the machine is locked by the HMI", "Cylinder manual mode active"</td><td>Operator/mode interaction, not a breakdown</td></tr>
+        <tr><td>Changeover / Recipe Setup</td><td>Format/recipe mismatches</td><td>(none observed at volume in this file)</td><td>Setup/changeover issue, tracked separately from reliability loss</td></tr>
+        <tr><td>Technical Failure (content override)</td><td>Real process conditions, regardless of severity tag</td><td>"Bad parts box is full, please empty!", "...takes longer than..."</td><td>These stop production for a real, fixable reason — kept in the Pareto even when tagged "Warning"</td></tr>
+        <tr><td>Advisory / Warning (uncategorized)</td><td>Everything else tagged <code>Warning_</code> with no override match</td><td>—</td><td>The control system itself flagged these as advisory-level, not a stoppage cause</td></tr>
+        <tr><td>Baseline / Non-Fault Marker</td><td><code>General_NoFaultSince...</code> timestamps only</td><td>"General_NoFaultSince 11:16:59"</td><td>A "nothing's wrong" marker, not a fault at all</td></tr>
+        <tr><td><strong>Technical Failure (default)</strong></td><td>Everything tagged <code>Alarm_</code>/<code>Fault_</code>/<code>0</code> with no override match</td><td>"Main air valve pressure not present", "Valve in pickup position A not present"</td><td><strong>This is the Pareto that belongs in a reliability review</strong></td></tr>
+      </tbody>
+    </table>
+    <p class="body-text" style="margin-top:14px; color:var(--text-muted); font-size:12px;">
+      One data-quality note: 1,119 stopped-state rows carry a bare <code>FirstFaultText</code> of <code>"0"</code>
+      instead of a proper <code>Warning_</code>/<code>Alarm_</code>/<code>Fault_</code> ID — nine of them are
+      actually "Safety guards not closed" (caught by the override above and correctly excluded) but most carry real,
+      undertagged fault text (Profibus, Sercos-bus, TCP, limit-switch faults). They're counted as Technical Failure
+      here but flagged separately as action item 9.
+    </p>
+  </div>
+
+<script id="data-blob" type="application/json">{"master_categories": [{"label": "Technical Failure", "hrs": 1069.8, "pct": 78.92044150256424}, {"label": "Advisory / Maintenance Notice", "hrs": 130.2, "pct": 9.608569862050944}, {"label": "Operator / Safety Interlock", "hrs": 106.7, "pct": 7.872975059594954}, {"label": "Operator / Procedural", "hrs": 26.2, "pct": 1.9313142505435816}, {"label": "Advisory / Warning (uncategorized)", "hrs": 14.1, "pct": 1.0424227621013389}, {"label": "Advisory / Pre-Warning", "hrs": 8.2, "pct": 0.6018188238113952}, {"label": "Baseline / Non-Fault Marker", "hrs": 0.3, "pct": 0.0224577393335248}], "master_clean": [{"label": "1A07-1B1 Main air valve basic machine pressure not present", "count": 9533, "hrs": 590.4}, {"label": "Valve in pickup position # not present", "count": 3844, "hrs": 42.7}, {"label": "Bad parts box is full, please empty!", "count": 4623, "hrs": 33.2}, {"label": "End of reel", "count": 1076, "hrs": 30.5}, {"label": "Flow monitor flow rate not OK", "count": 594, "hrs": 30.0}, {"label": "Limit switch fault Fork # in working position", "count": 2712, "hrs": 28.5}, {"label": "MSM-Bulge A: At least one station takes longer than maximum allowed", "count": 314, "hrs": 20.3}, {"label": "1A03-1K1:CN10 Fault in the Profibus system, for details see Diagnosis > Profibus, Address", "count": 28, "hrs": 19.8}, {"label": "System error of an axis, see fault message list", "count": 377, "hrs": 18.2}, {"label": "Fault in the controller, see Diagnosis > Servo", "count": 75, "hrs": 17.0}, {"label": "Flow monitor flowrate not ok", "count": 63, "hrs": 11.8}, {"label": "Group fault Heating counter plate A", "count": 43, "hrs": 10.7}, {"label": "Limit switch fault Counter plate in home position", "count": 109, "hrs": 9.2}, {"label": "Group fault Heating sealing head B", "count": 8, "hrs": 8.9}, {"label": "TCP fault. See diagnostic page", "count": 67, "hrs": 7.8}, {"label": "Other (219 lower-frequency technical fault families)", "count": 14008, "hrs": 190.8}], "action_plan": [{"title": "Root-cause the chronic main air valve / pressure fault", "tag": "Engineering project", "tagClass": "project", "desc": "\"Main air valve basic machine pressure not present\" is 590.4 hrs \u2014 55.2% of all real technical downtime and 43.6% of every logged hour on HU3, at ~3.7 min/event across 9,533 events (a sustained supply issue, not sensor chatter). Commission an air-supply audit: compressor capacity and duty cycle, regulator/valve condition, header sizing, and a leak survey; check for contention with other equipment sharing the same air main.", "impact": "590.4 hrs \u2014 more than half of all real technical downtime on this machine"}, {"title": "Inspect and PM the pickup-position valve sensing (A/B)", "tag": "Engineering project", "tagClass": "project", "desc": "\"Valve in pickup position A/B not present\" totals 42.6 hrs across 3,844 events. Add this sensor/valve pair to the PM schedule and check for wear, misalignment, or a marginal sensor threshold causing intermittent no-detects.", "impact": "42.6 hrs, 3,844 events \u2014 second-largest real technical issue"}, {"title": "Increase reject (\"bad parts box\") handling capacity", "tag": "Quick win", "tagClass": "quick", "desc": "\"Bad parts box is full, please empty!\" is 33.2 hrs across 4,623 events \u2014 logged at Warning severity but kept in the technical Pareto because it's a genuine material-handling stoppage. Fit a larger box or schedule more frequent empties, and consider a fill-level sensor that alerts before the box is completely full.", "impact": "33.2 hrs, 4,623 events; low-cost fix"}, {"title": "Convert reel-end stops from unplanned to planned", "tag": "Quick win", "tagClass": "quick", "desc": "\"End of reel\" totals 30.5 hrs across 1,076 events. Add advance low-material sensors and pre-stage replacement reels (or a dual-reel/splice stand) so this becomes a scheduled changeover instead of a surprise stop.", "impact": "30.5 hrs, 1,076 events"}, {"title": "Investigate flow-monitor faults alongside the air-pressure issue", "tag": "Engineering project", "tagClass": "project", "desc": "\"Flow monitor flow rate/flowrate not OK\" totals 41.8 hrs across 657 events on the same pneumatic system implicated in action #1 \u2014 check whether these share a root cause (supply pressure/flow instability) before treating them as separate problems.", "impact": "41.8 hrs, 657 events; likely linked to action #1"}, {"title": "PM the fork-position limit switches (A/B)", "tag": "Quick win", "tagClass": "quick", "desc": "\"Limit switch fault Fork A/B in working position\" totals 28.5 hrs across 2,712 events \u2014 a mechanical wear item. Add to the standard limit-switch PM/replacement cycle.", "impact": "28.5 hrs, 2,712 events"}, {"title": "Time-study the Bulge A station cycle time", "tag": "Engineering project", "tagClass": "project", "desc": "\"MSM-Bulge A: at least one station takes longer than maximum allowed/set cycle time\" totals 25.9 hrs across 890 events \u2014 a speed-loss pattern isolated to one station. Run a focused cycle-time study on Bulge A to find the bottleneck.", "impact": "25.9 hrs, 890 events, isolated to one station"}, {"title": "Audit controls/network comms faults", "tag": "Engineering project", "tagClass": "project", "desc": "Profibus, TCP, servo-controller, and PLC-to-robot comms faults together total roughly 48.8 hrs across ~186 events \u2014 infrequent individually but the same class of issue found on the packaging line's Sercos ring. Have controls engineering audit wiring, grounding, and network health across all three machines together.", "impact": "~48.8 hrs across 4 distinct comms-related fault codes"}, {"title": "Fix fault-code tagging for the bare-\"0\" and ambiguous entries", "tag": "Governance", "tagClass": "governance", "desc": "1,119 stopped-state rows carry a bare FirstFaultText of \"0\" instead of a proper Warning_/Alarm_/Fault_ ID (some are real faults like Profibus/Sercos/TCP errors, mistagged). Separately, retire the undescriptive \"SR Dependency list\" message in favor of whatever specific condition it's meant to summarize. Have controls engineering close both gaps in the fault dictionary.", "impact": "1,119 rows currently untraceable by proper reason code"}, {"title": "Schedule UPS battery replacement as preventive maintenance", "tag": "Governance", "tagClass": "governance", "desc": "\"Battery in external UPS must be checked\" (both UPS units) totals 130.2 hrs of logged advisory time across 14,705 occurrences \u2014 a recurring reminder, not a new fault each time. Replace the batteries proactively on a calendar schedule and stop treating this as an event-by-event alarm.", "impact": "130.2 hrs of recurring advisory noise, fully preventable"}]}</script>
+<script>
+(function(){
+  "use strict";
+  const DATA = JSON.parse(document.getElementById('data-blob').textContent);
+
+  function fmtNum(n){ return Math.round(n).toLocaleString(); }
+
+  function renderBars(containerId, rows, opts){
+    opts = opts || {};
+    const el = document.getElementById(containerId);
+    el.innerHTML = '';
+    const max = Math.max(1, ...rows.map(r => r.value));
+    for (const r of rows){
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      const pct = (r.value / max) * 100;
+      const label = document.createElement('div'); label.className = 'bar-label'; label.textContent = r.label; label.title = r.label;
+      const track = document.createElement('div'); track.className = 'bar-track';
+      const fill = document.createElement('div'); fill.className = 'bar-fill';
+      fill.style.width = Math.max(pct, 0.5) + '%';
+      fill.style.background = r.color || 'var(--seq)';
+      track.appendChild(fill);
+      const val = document.createElement('div'); val.className = 'bar-value'; val.textContent = r.valueLabel;
+      row.append(label, track, val);
+      el.appendChild(row);
+    }
+  }
+
+  function renderLegend(containerId, items){
+    const el = document.getElementById(containerId);
+    el.innerHTML = '';
+    for (const it of items){
+      const span = document.createElement('span');
+      const sw = document.createElement('span'); sw.className = 'sw'; sw.style.background = it.color;
+      span.appendChild(sw);
+      span.appendChild(document.createTextNode(it.label));
+      el.appendChild(span);
+    }
+  }
+
+  // ---- Master category breakdown (emphasis: Technical Failure highlighted) ----
+  {
+    const cats = DATA.master_categories;
+    const rows = cats.map(c => ({
+      label: c.label, value: c.hrs,
+      valueLabel: fmtNum(c.hrs) + ' hrs (' + c.pct.toFixed(1) + '%)',
+      color: c.label === 'Technical Failure' ? 'var(--seq)' : 'var(--gray-2)'
+    }));
+    renderBars('master-cat-chart', rows);
+    renderLegend('master-cat-legend', [
+      {label:'Technical Failure (the real Pareto)', color:'var(--seq)'},
+      {label:'Everything else (noise buckets — see table below)', color:'var(--gray-2)'}
+    ]);
+  }
+
+  // ---- HU3 cleaned Pareto ----
+  {
+    const rows = DATA.master_clean.map(c => ({ label: c.label, value: c.hrs, valueLabel: fmtNum(c.hrs) + ' hrs (' + fmtNum(c.count) + ' events)', color: 'var(--seq)' }));
+    renderBars('master-clean-chart', rows);
+  }
+
+  // ---- Action plan ----
+  {
+    const el = document.getElementById('action-plan');
+    el.innerHTML = '';
+    DATA.action_plan.forEach((a, i) => {
+      const card = document.createElement('div');
+      card.className = 'action' + (i === 0 ? ' priority-1' : '');
+      const num = document.createElement('div'); num.className = 'num'; num.textContent = (i+1);
+      const body = document.createElement('div'); body.className = 'action-body';
+      const title = document.createElement('div'); title.className = 'action-title';
+      title.textContent = a.title;
+      const tag = document.createElement('span'); tag.className = 'action-tag ' + a.tagClass; tag.textContent = a.tag;
+      title.appendChild(tag);
+      const desc = document.createElement('div'); desc.className = 'action-desc'; desc.textContent = a.desc;
+      const impact = document.createElement('div'); impact.className = 'action-impact'; impact.innerHTML = 'Impact: <strong>' + a.impact + '</strong>';
+      body.append(title, desc, impact);
+      card.append(num, body);
+      el.appendChild(card);
+    });
+  }
+})();
+</script>
