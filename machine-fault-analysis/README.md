@@ -24,7 +24,9 @@ schubert") and **@Fault_0085** ("Schubert – downstream machine not ready").
   (guard/door interlocks, pre-warnings, operator/procedural messages,
   changeover mismatches, and — on the child side — restart-sequence chatter
   and production-mode status), then presents the cleaned Paretos for both
-  machines and a 10-point, impact-ranked action plan.
+  machines, a statistical significance section (Poisson enrichment tests,
+  permutation validation, Mann-Whitney duration comparison), and a
+  10-point, impact-ranked action plan.
 - **`hu3_ci_report.html`** — same method applied to a third, independent
   machine (HU3), plus a further correction: alarms are now attributed to the
   fault active at the exact `MachineStatus` 1→0 transition that starts each
@@ -58,6 +60,34 @@ a UPS-battery/"SR Dependency list" advisory as the logged trigger — flagged
 for validation rather than treated as confirmed. See `hu3_ci_report.html`
 for the full breakdown, the corrected 10-point action plan, and the
 methodology explanation.
+
+## Statistical significance (added to `ci_report.html`)
+
+Raw in-window counts don't distinguish "this alarm is common everywhere" from
+"this alarm is specifically tied to the master's stoppage." Since the analysis
+covers the complete logged history rather than a sample, significance is
+tested with a Poisson enrichment test per child alarm type — observed count
+inside the @Fault_0081/@Fault_0085 windows vs. the count expected if that
+alarm occurred at its own background rate with no relationship to the
+stoppages — Bonferroni-corrected across 96 alarm types tested at once, with
+two categories cross-checked by an independent Monte Carlo permutation test.
+
+Of 96 alarm types tested, 81 (84%) are significantly enriched during these
+stoppages — but the three with the largest raw counts ("Overflow container
+for grouping belt empty," "Local Sercos bus does not run as ring," "Refill
+magazine") are **not** among them (rate ratio 0.72–0.78, not significant):
+they're common Schubert background conditions, not confirmed drivers of the
+master's wait. The statistically strongest true signals are lower-volume,
+highly specific faults — literature pick-up/placement errors on Track 1/2,
+discharge-belt and pusher sensor faults, and labeling/camera sensor errors —
+each 12–22× enriched at p-values as low as 1e-145. A Mann-Whitney U test
+also confirms guard/interlock and technical-failure stoppages are
+statistically distinguishable populations (p < 10⁻³⁰⁰), though the direction
+is worth reading carefully: interlock stops have the longer median duration,
+not the shorter one. The action plan in `ci_report.html` has been revised to
+match — items originally aimed at the overflow container and Sercos fault are
+now flagged as general reliability work rather than the fix for
+@Fault_0081/@Fault_0085.
 
 ## Method summary
 
