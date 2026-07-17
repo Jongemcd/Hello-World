@@ -163,6 +163,7 @@ nav.toc a:hover { text-decoration: underline; }
     <a href="#summary">Executive summary</a>
     <a href="#correction">What changed and why</a>
     <a href="#hu3">HU3 breakdown</a>
+    <a href="#stats">Statistical significance</a>
     <a href="#plan">10-point action plan</a>
     <a href="#method">Classification method</a>
   </nav>
@@ -231,6 +232,64 @@ nav.toc a:hover { text-decoration: underline; }
     </div>
   </div>
 
+  <div class="card" id="stats">
+    <h2>Statistical significance: proving the correction, not just arguing it</h2>
+    <p class="body-text">HU3 is a single machine, not a linked pair — so there's no second dataset to test alarms
+      against, the way the packaging-line report tests child alarms against master stoppages. The equivalent
+      question here is just as testable, though: the whole case for demoting "main air valve pressure not present"
+      to a cascade artifact rests on the claim that it's a <em>byproduct of being stopped for a while</em>, not a
+      specific trigger. That claim makes a clear, falsifiable prediction — episodes containing that cascade alarm
+      should run measurably longer than episodes that don't. Below, that prediction is tested directly, plus a
+      formal check that the six noise/real categories are genuinely different populations rather than an arbitrary
+      split.</p>
+    <p class="body-text" style="color:var(--text-muted); font-size:12px;">
+      As with the packaging-line report, this covers the complete logged history, not a sample — so every test here
+      asks "could a pattern this strong appear if the two things being compared were actually unrelated," not "would
+      this hold up in a different sample." Distributions this skewed (a few very long stoppages, many short ones)
+      are compared with Mann-Whitney U / Kruskal-Wallis rather than a t-test, which assumes normality these data
+      don't have.
+    </p>
+
+    <h3 style="margin-top:22px;">Is the air-valve cascade really just a symptom of extended downtime?</h3>
+    <div class="hero-stats">
+      <div class="stat"><div class="label">Episodes WITH the cascade</div><div class="value">129.2s</div><div class="sub">median duration, n = 8,223</div></div>
+      <div class="stat"><div class="label">Episodes WITHOUT it</div><div class="value">36.1s</div><div class="sub">median duration, n = 7,956</div></div>
+      <div class="stat"><div class="label">Mann-Whitney U test</div><div class="value good">p &lt; 10⁻³⁰⁰</div><div class="sub">one-sided: with &gt; without</div></div>
+      <div class="stat"><div class="label">Duration ↔ cascade-row count</div><div class="value">ρ = 0.51</div><div class="sub">Spearman, p &lt; 10⁻³⁰⁰, n = 16,179</div></div>
+    </div>
+    <p class="body-text">Episodes that ever show "main air valve pressure not present" run a median of 129.2 seconds —
+      <strong>3.6× longer</strong> than the 36.1-second median for episodes that never do (means: 402.1s vs. 101.7s).
+      A one-sided Mann-Whitney U test confirms this isn't noise (p effectively zero at this sample size). Separately,
+      the total number of cascade alarms logged in an episode correlates positively with how long it runs (Spearman
+      ρ = 0.51, p ≈ 0) — exactly the pattern predicted if this alarm accumulates the longer the machine sits stopped,
+      rather than firing because of what stopped it. Both results are consistent with the mechanism proposed in the
+      correction above: the valve simply isn't cycling while anything is stopped, and the longer that goes on, the
+      more likely the pressure sensor gets logged as "not present."</p>
+
+    <h3 style="margin-top:22px;">Are the six noise/real categories actually different populations?</h3>
+    <p class="body-text">A Kruskal-Wallis test across all six episode categories rejects the idea that they share one
+      duration distribution (H = 583.6, p = 7.2×10⁻¹²⁴, n = 16,179) — confirming the classification is separating
+      genuinely different kinds of stoppages, not just relabeling the same one. Three pairwise comparisons
+      (Bonferroni-corrected for 3 tests, α ≈ 0.017):</p>
+    <table class="methodology-table">
+      <thead><tr><th>Comparison</th><th class="num">Median A</th><th class="num">Median B</th><th class="num">p-value (Bonferroni)</th><th>Effect size</th></tr></thead>
+      <tbody id="pairwise-table"></tbody>
+    </table>
+    <p class="body-text" style="margin-top:12px;">All six categories' medians and sample sizes:</p>
+    <table class="methodology-table">
+      <thead><tr><th>Category</th><th class="num">n episodes</th><th class="num">Median duration</th><th class="num">Mean duration</th></tr></thead>
+      <tbody id="category-median-table"></tbody>
+    </table>
+    <div class="callout">
+      <strong>Reading the direction:</strong> as with the packaging-line report, don't assume "noise = short."
+      Interlock episodes (median 140.3s) and Advisory/Maintenance-Notice episodes (median 111.2s) both run longer
+      than confirmed Technical Failure episodes (median 74.1s) — Technical Failure's shorter median reflects that it
+      still contains many quick, cleanly-resolved faults alongside the handful of very long ones. The statistical
+      significance confirms these are genuinely different populations; it doesn't by itself tell you which one is
+      "worse."
+    </div>
+  </div>
+
   <div class="card" id="plan">
     <h2>10-point continuous improvement action plan</h2>
     <p class="body-text" style="margin-bottom:16px;">Prioritized by measured impact in the cleaned data above. Tags:
@@ -275,7 +334,7 @@ nav.toc a:hover { text-decoration: underline; }
     </p>
   </div>
 
-<script id="data-blob" type="application/json">{"master_categories": [{"label": "Technical Failure", "hrs": 634.5, "pct": 55.50090827055902}, {"label": "Advisory / Maintenance Notice", "hrs": 214.3, "pct": 18.748575887721667}, {"label": "Operator / Safety Interlock", "hrs": 147.0, "pct": 12.860346276355983}, {"label": "Operator / Procedural", "hrs": 71.3, "pct": 6.232704889408741}, {"label": "Advisory / Pre-Warning", "hrs": 44.3, "pct": 3.872957340652391}, {"label": "Advisory / Warning (uncategorized)", "hrs": 31.8, "pct": 2.784507335302188}], "master_clean": [{"label": "End of reel", "count": 764, "hrs": 105.2}, {"label": "Bad parts box is full, please empty!", "count": 713, "hrs": 81.3}, {"label": "Valve in pickup position # not present", "count": 2369, "hrs": 67.1}, {"label": "Limit switch fault Fork # in working position", "count": 1515, "hrs": 55.9}, {"label": "Web torn", "count": 484, "hrs": 24.0}, {"label": "All rolls empty - Please refill!", "count": 204, "hrs": 23.3}, {"label": "Vacuum splice module not present", "count": 490, "hrs": 23.0}, {"label": "MSM-Main: At least one station takes longer than the set cycle time allows", "count": 365, "hrs": 22.3}, {"label": "General error", "count": 327, "hrs": 13.2}, {"label": "Punch waste B not exhausted", "count": 182, "hrs": 11.4}, {"label": "Valve right inserted but not found - Check for valve on web", "count": 414, "hrs": 10.6}, {"label": "Hot printer A not ready for operation", "count": 51, "hrs": 8.5}, {"label": "Flow monitor flow rate not OK", "count": 308, "hrs": 8.0}, {"label": "Error Cylinder switch", "count": 162, "hrs": 7.9}, {"label": "MSM-Main: At least one station takes longer than maximum allowed", "count": 355, "hrs": 7.3}, {"label": "Other (108 lower-frequency technical fault families)", "count": 3909, "hrs": 165.2}], "action_plan": [{"title": "Reduce reel-end and roll-exhaustion stoppages", "tag": "Quick win", "tagClass": "quick", "desc": "\"End of reel\" and \"All rolls empty - please refill!\" together are the true first fault in 968 stoppage episodes, totaling 128.5 hrs (20.3% of confirmed technical downtime) \u2014 the largest confirmed cause once cascade alarms are removed. Add advance low-material sensors and pre-staged replacement reels/rolls (or a splice stand) so these become scheduled changeovers instead of surprise stops.", "impact": "128.5 hrs, 968 episodes \u2014 the #1 confirmed technical root cause"}, {"title": "Validate the UPS-battery / \"SR Dependency list\" advisory as a real trigger", "tag": "Governance", "tagClass": "governance", "desc": "1,615 episodes (214.3 hrs, 18.7% of all downtime \u2014 bigger than any single confirmed technical cause) start with a \"Battery in external UPS must be checked\" or \"SR Dependency list\" message logged at the exact moment the machine stops. Neither obviously explains a production stop by itself. Before investing in a fix, cross-check these episodes against maintenance/operations logs to determine whether an unlogged condition actually caused the stop, or whether a UPS event genuinely does take the line down.", "impact": "214.3 hrs, 1,615 episodes \u2014 larger than any confirmed technical issue, but unconfirmed"}, {"title": "Increase reject (\"bad parts box\") handling capacity", "tag": "Quick win", "tagClass": "quick", "desc": "\"Bad parts box is full, please empty!\" is the true first fault in 713 episodes, totaling 81.3 hrs (12.8%). Fit a larger box or schedule more frequent empties, and add a fill-level sensor that alerts before it's completely full.", "impact": "81.3 hrs, 713 episodes"}, {"title": "Inspect and PM the pickup-position valve sensing (A/B)", "tag": "Engineering project", "tagClass": "project", "desc": "\"Valve in pickup position A/B not present\" is the true first fault in 2,369 episodes, totaling 67.1 hrs (10.6%) \u2014 by far the highest episode count of any confirmed cause, suggesting a chronic intermittent condition rather than occasional hard failures. Check for wear, misalignment, or a marginal sensor threshold.", "impact": "67.1 hrs, 2,369 episodes \u2014 highest event count of any confirmed cause"}, {"title": "PM the fork-position limit switches (A/B)", "tag": "Quick win", "tagClass": "quick", "desc": "\"Limit switch fault Fork A/B in working position\" is the true first fault in 1,515 episodes, totaling 55.9 hrs (8.8%) \u2014 a mechanical wear item. Add to the standard limit-switch PM/replacement cycle.", "impact": "55.9 hrs, 1,515 episodes"}, {"title": "Investigate web tension/splice quality (\"Web torn\")", "tag": "Engineering project", "tagClass": "project", "desc": "\"Web torn\" is a true first fault in 484 episodes, totaling 24.0 hrs (3.8%) \u2014 this issue was invisible in the row-level pass, buried under air-valve cascade noise. Review web tension control and splice quality on the affected stations.", "impact": "24.0 hrs, 484 episodes; newly visible after the correction"}, {"title": "Inspect the vacuum splice module", "tag": "Engineering project", "tagClass": "project", "desc": "\"Vacuum splice module not present\" is a true first fault in 490 episodes, totaling 23.0 hrs (3.6%). Check vacuum supply, seals, and the module's presence sensor.", "impact": "23.0 hrs, 490 episodes"}, {"title": "Time-study the MSM station cycle time", "tag": "Engineering project", "tagClass": "project", "desc": "\"MSM-Main: at least one station takes longer than the set cycle time allows\" is a true first fault in 365 episodes, totaling 22.3 hrs (3.5%) \u2014 a speed-loss pattern that genuinely initiates stops, not just a background condition. Run a focused cycle-time study to find the bottleneck station.", "impact": "22.3 hrs, 365 episodes"}, {"title": "Run a Kaizen on guard/stop-button interlock frequency", "tag": "Quick win", "tagClass": "quick", "desc": "Unlike the air-valve alarm, guard and stop-button interlocks genuinely do initiate stops: 851 episodes (147.0 hrs, 12.9% of all logged downtime) start with one. Time-and-motion study on which interlock(s) trigger most and why, then poka-yoke or redesign the worst offenders \u2014 the same recommendation that paid off on the packaging line.", "impact": "147.0 hrs, 851 episodes \u2014 a real, frequent cause, worth streamlining"}, {"title": "Roll out the episode-based method plant-wide and close two tagging gaps", "tag": "Governance", "tagClass": "governance", "desc": "This correction changed the #1 finding from 590 hours to zero \u2014 any future Pareto here or on other machines (including the master/Schubert linkage report) should use true-first-fault-at-transition, not row-level summation. While rebuilding, fix two tagging gaps: 1,119 stopped rows carry a bare \"0\" FirstFaultText instead of a proper ID, and the undescriptive \"SR Dependency list\" message should be replaced with whatever specific condition it's meant to summarize.", "impact": "Prevents the single largest error found in this analysis from recurring"}]}</script>
+<script id="data-blob" type="application/json">{"master_categories": [{"label": "Technical Failure", "hrs": 634.5, "pct": 55.50090827055902}, {"label": "Advisory / Maintenance Notice", "hrs": 214.3, "pct": 18.748575887721667}, {"label": "Operator / Safety Interlock", "hrs": 147.0, "pct": 12.860346276355983}, {"label": "Operator / Procedural", "hrs": 71.3, "pct": 6.232704889408741}, {"label": "Advisory / Pre-Warning", "hrs": 44.3, "pct": 3.872957340652391}, {"label": "Advisory / Warning (uncategorized)", "hrs": 31.8, "pct": 2.784507335302188}], "master_clean": [{"label": "End of reel", "count": 764, "hrs": 105.2}, {"label": "Bad parts box is full, please empty!", "count": 713, "hrs": 81.3}, {"label": "Valve in pickup position # not present", "count": 2369, "hrs": 67.1}, {"label": "Limit switch fault Fork # in working position", "count": 1515, "hrs": 55.9}, {"label": "Web torn", "count": 484, "hrs": 24.0}, {"label": "All rolls empty - Please refill!", "count": 204, "hrs": 23.3}, {"label": "Vacuum splice module not present", "count": 490, "hrs": 23.0}, {"label": "MSM-Main: At least one station takes longer than the set cycle time allows", "count": 365, "hrs": 22.3}, {"label": "General error", "count": 327, "hrs": 13.2}, {"label": "Punch waste B not exhausted", "count": 182, "hrs": 11.4}, {"label": "Valve right inserted but not found - Check for valve on web", "count": 414, "hrs": 10.6}, {"label": "Hot printer A not ready for operation", "count": 51, "hrs": 8.5}, {"label": "Flow monitor flow rate not OK", "count": 308, "hrs": 8.0}, {"label": "Error Cylinder switch", "count": 162, "hrs": 7.9}, {"label": "MSM-Main: At least one station takes longer than maximum allowed", "count": 355, "hrs": 7.3}, {"label": "Other (108 lower-frequency technical fault families)", "count": 3909, "hrs": 165.2}], "action_plan": [{"title": "Reduce reel-end and roll-exhaustion stoppages", "tag": "Quick win", "tagClass": "quick", "desc": "\"End of reel\" and \"All rolls empty - please refill!\" together are the true first fault in 968 stoppage episodes, totaling 128.5 hrs (20.3% of confirmed technical downtime) \u2014 the largest confirmed cause once cascade alarms are removed. Add advance low-material sensors and pre-staged replacement reels/rolls (or a splice stand) so these become scheduled changeovers instead of surprise stops.", "impact": "128.5 hrs, 968 episodes \u2014 the #1 confirmed technical root cause"}, {"title": "Validate the UPS-battery / \"SR Dependency list\" advisory as a real trigger", "tag": "Governance", "tagClass": "governance", "desc": "1,615 episodes (214.3 hrs, 18.7% of all downtime \u2014 bigger than any single confirmed technical cause) start with a \"Battery in external UPS must be checked\" or \"SR Dependency list\" message logged at the exact moment the machine stops. Neither obviously explains a production stop by itself. Before investing in a fix, cross-check these episodes against maintenance/operations logs to determine whether an unlogged condition actually caused the stop, or whether a UPS event genuinely does take the line down.", "impact": "214.3 hrs, 1,615 episodes \u2014 larger than any confirmed technical issue, but unconfirmed"}, {"title": "Increase reject (\"bad parts box\") handling capacity", "tag": "Quick win", "tagClass": "quick", "desc": "\"Bad parts box is full, please empty!\" is the true first fault in 713 episodes, totaling 81.3 hrs (12.8%). Fit a larger box or schedule more frequent empties, and add a fill-level sensor that alerts before it's completely full.", "impact": "81.3 hrs, 713 episodes"}, {"title": "Inspect and PM the pickup-position valve sensing (A/B)", "tag": "Engineering project", "tagClass": "project", "desc": "\"Valve in pickup position A/B not present\" is the true first fault in 2,369 episodes, totaling 67.1 hrs (10.6%) \u2014 by far the highest episode count of any confirmed cause, suggesting a chronic intermittent condition rather than occasional hard failures. Check for wear, misalignment, or a marginal sensor threshold.", "impact": "67.1 hrs, 2,369 episodes \u2014 highest event count of any confirmed cause"}, {"title": "PM the fork-position limit switches (A/B)", "tag": "Quick win", "tagClass": "quick", "desc": "\"Limit switch fault Fork A/B in working position\" is the true first fault in 1,515 episodes, totaling 55.9 hrs (8.8%) \u2014 a mechanical wear item. Add to the standard limit-switch PM/replacement cycle.", "impact": "55.9 hrs, 1,515 episodes"}, {"title": "Investigate web tension/splice quality (\"Web torn\")", "tag": "Engineering project", "tagClass": "project", "desc": "\"Web torn\" is a true first fault in 484 episodes, totaling 24.0 hrs (3.8%) \u2014 this issue was invisible in the row-level pass, buried under air-valve cascade noise. Review web tension control and splice quality on the affected stations.", "impact": "24.0 hrs, 484 episodes; newly visible after the correction"}, {"title": "Inspect the vacuum splice module", "tag": "Engineering project", "tagClass": "project", "desc": "\"Vacuum splice module not present\" is a true first fault in 490 episodes, totaling 23.0 hrs (3.6%). Check vacuum supply, seals, and the module's presence sensor.", "impact": "23.0 hrs, 490 episodes"}, {"title": "Time-study the MSM station cycle time", "tag": "Engineering project", "tagClass": "project", "desc": "\"MSM-Main: at least one station takes longer than the set cycle time allows\" is a true first fault in 365 episodes, totaling 22.3 hrs (3.5%) \u2014 a speed-loss pattern that genuinely initiates stops, not just a background condition. Run a focused cycle-time study to find the bottleneck station.", "impact": "22.3 hrs, 365 episodes"}, {"title": "Run a Kaizen on guard/stop-button interlock frequency", "tag": "Quick win", "tagClass": "quick", "desc": "Unlike the air-valve alarm, guard and stop-button interlocks genuinely do initiate stops: 851 episodes (147.0 hrs, 12.9% of all logged downtime) start with one. Time-and-motion study on which interlock(s) trigger most and why, then poka-yoke or redesign the worst offenders \u2014 the same recommendation that paid off on the packaging line.", "impact": "147.0 hrs, 851 episodes \u2014 a real, frequent cause, worth streamlining"}, {"title": "Roll out the episode-based method plant-wide and close two tagging gaps", "tag": "Governance", "tagClass": "governance", "desc": "This correction changed the #1 finding from 590 hours to zero \u2014 any future Pareto here or on other machines (including the master/Schubert linkage report) should use true-first-fault-at-transition, not row-level summation. While rebuilding, fix two tagging gaps: 1,119 stopped rows carry a bare \"0\" FirstFaultText instead of a proper ID, and the undescriptive \"SR Dependency list\" message should be replaced with whatever specific condition it's meant to summarize.", "impact": "Prevents the single largest error found in this analysis from recurring"}], "pairwise": [{"a": "Technical Failure", "b": "Advisory / Maintenance Notice", "median_a": 74.117, "median_b": 111.18, "u": 7729129.5, "p": 3.209803154265383e-56, "p_bonferroni": 9.629409462796148e-56, "rank_biserial": 0.24106585796219437}, {"a": "Technical Failure", "b": "Operator / Safety Interlock", "median_a": 74.117, "median_b": 140.256, "u": 3731914.0, "p": 3.5711544651242035e-50, "p_bonferroni": 1.071346339537261e-49, "rank_biserial": 0.30457852052192846}, {"a": "Operator / Safety Interlock", "b": "Advisory / Maintenance Notice", "median_a": 140.256, "median_b": 111.18, "u": 737308.0, "p": 0.002863586420948748, "p_bonferroni": 0.008590759262846245, "rank_biserial": -0.07294350481858891}], "category_medians": [{"category": "Technical Failure", "n": 12612, "median_sec": 74.117, "mean_sec": 181.1178345226768}, {"category": "Advisory / Maintenance Notice", "n": 1615, "median_sec": 111.18, "mean_sec": 477.7941708978329}, {"category": "Operator / Safety Interlock", "n": 851, "median_sec": 140.256, "mean_sec": 621.9682150411281}, {"category": "Operator / Procedural", "n": 227, "median_sec": 138.74, "mean_sec": 1130.0451497797358}, {"category": "Advisory / Pre-Warning", "n": 365, "median_sec": 170.78, "mean_sec": 436.7118109589041}, {"category": "Advisory / Warning (uncategorized)", "n": 509, "median_sec": 59.603, "mean_sec": 225.15192927308448}]}</script>
 <script>
 (function(){
   "use strict";
@@ -335,6 +394,40 @@ nav.toc a:hover { text-decoration: underline; }
   {
     const rows = DATA.master_clean.map(c => ({ label: c.label, value: c.hrs, valueLabel: fmtNum(c.hrs) + ' hrs (' + fmtNum(c.count) + ' events)', color: 'var(--seq)' }));
     renderBars('master-clean-chart', rows);
+  }
+
+  // ---- Statistical significance tables ----
+  function fmtP2(p){
+    if (p === 0) return '< 1e-300';
+    if (p < 0.0001) return p.toExponential(2);
+    return p.toFixed(4);
+  }
+  {
+    const tbody = document.getElementById('pairwise-table');
+    tbody.innerHTML = '';
+    for (const r of DATA.pairwise){
+      const tr = document.createElement('tr');
+      const c0 = document.createElement('td'); c0.textContent = r.a + ' vs. ' + r.b;
+      const c1 = document.createElement('td'); c1.className='num'; c1.textContent = r.median_a.toFixed(1) + 's';
+      const c2 = document.createElement('td'); c2.className='num'; c2.textContent = r.median_b.toFixed(1) + 's';
+      const c3 = document.createElement('td'); c3.className='num'; c3.textContent = fmtP2(r.p_bonferroni);
+      const c4 = document.createElement('td'); c4.textContent = 'r = ' + Math.abs(r.rank_biserial).toFixed(3);
+      tr.append(c0,c1,c2,c3,c4);
+      tbody.appendChild(tr);
+    }
+  }
+  {
+    const tbody = document.getElementById('category-median-table');
+    tbody.innerHTML = '';
+    for (const r of DATA.category_medians){
+      const tr = document.createElement('tr');
+      const c0 = document.createElement('td'); c0.textContent = r.category;
+      const c1 = document.createElement('td'); c1.className='num'; c1.textContent = r.n.toLocaleString();
+      const c2 = document.createElement('td'); c2.className='num'; c2.textContent = r.median_sec.toFixed(1) + 's';
+      const c3 = document.createElement('td'); c3.className='num'; c3.textContent = r.mean_sec.toFixed(1) + 's';
+      tr.append(c0,c1,c2,c3);
+      tbody.appendChild(tr);
+    }
   }
 
   // ---- Action plan ----

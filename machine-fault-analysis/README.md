@@ -89,6 +89,24 @@ match — items originally aimed at the overflow container and Sercos fault are
 now flagged as general reliability work rather than the fix for
 @Fault_0081/@Fault_0085.
 
+## Statistical significance (added to `hu3_ci_report.html`)
+
+HU3 is a single machine, so there's no second dataset to test alarms against
+the way the packaging-line report does — the equivalent test is whether the
+claim behind the true-first-fault correction actually holds up. The case for
+treating "main air valve pressure not present" as a cascade artifact rests on
+it being a byproduct of extended downtime rather than a specific trigger,
+which predicts episodes containing it should run measurably longer. Tested
+directly: episodes with that cascade alarm have a median duration of 129.2s
+vs. 36.1s without (3.6× longer; one-sided Mann-Whitney U, p effectively
+zero), and the total cascade-alarm count in an episode correlates with how
+long it runs (Spearman ρ = 0.51, p ≈ 0) — both consistent with the proposed
+mechanism. A Kruskal-Wallis test also confirms the six noise/real categories
+are genuinely different duration populations (H = 583.6, p = 7.2×10⁻¹²⁴),
+not an arbitrary split — though as on the packaging line, "noise" categories
+(interlock, maintenance-notice) actually run longer than confirmed Technical
+Failure, not shorter.
+
 ## Method summary
 
 The master log is a change/event log — each row's duration runs until the
