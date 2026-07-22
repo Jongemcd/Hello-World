@@ -250,6 +250,22 @@ nav.toc a:hover { text-decoration: underline; }
       permutation test (randomly re-timing the same windows across the child log's timeline) — it agreed with the
       Poisson result in both cases (p = 0.001).</p>
 
+    <div class="callout">
+      <strong>"Expected by chance," in plain English:</strong> it's how many times we'd see a given alarm during
+      the master's stoppages even if that alarm had nothing to do with the stoppages at all — just because that
+      alarm happens a lot in general. Some alarms fire constantly, all day, no matter what. So even a random slice
+      of time will catch a bunch of them — not because that slice is special, but because the alarm is everywhere.
+      "Expected by chance" is that catch-anyway number.<br/><br/>
+      For example: "Overflow container empty" fired 91,100 times over the whole ~6 months. The stoppage windows
+      only cover about 10% of that time, so pure luck alone predicts roughly 9,088 of those 91,100 should land
+      inside the windows — 10% of a thing that happens everywhere lands in any 10% slice, stoppage or not. We
+      actually counted 7,082 inside the windows — at or below that luck-alone number. So this alarm isn't specially
+      tied to the stoppages; it's just common everywhere.<br/><br/>
+      Compare that to "Pick-up error, literature Track 1": rare overall, but it showed up <strong>22× more often</strong>
+      inside the stoppage windows than luck alone would predict. That gap — way more than chance explains — is the
+      signal of a real connection, not a coincidence.
+    </div>
+
     <div class="hero-stats">
       <div class="stat"><div class="label">Child alarm types tested</div><div class="value">96</div><div class="sub">with ≥10 occurrences in-window</div></div>
       <div class="stat"><div class="label">Significantly enriched</div><div class="value good">81</div><div class="sub">84% — real, non-chance association</div></div>
