@@ -50,7 +50,12 @@ window.VPM_MOCK = {
       ok: true,
       triggerText: "Quality Trigger is\n3 Days out of 5 with > 2 NCMRs",
       milestones: [],
-      actions: []
+      actions: [
+        { personResponsible: "Team Member H", actionNo: 21102, location: "Site 1 - Line 4", actionRequired: "Investigate the root cause behind the recent NCMR spike and confirm containment is in place.", dueDate: "2026-09-18" },
+        { personResponsible: "Team Member I", actionNo: 21108, location: "Site 1 - Line 4", actionRequired: "Review incoming inspection criteria with the supplier for the affected component.", dueDate: "2026-09-20" },
+        { personResponsible: "Team Member A", actionNo: 21115, location: "Site 1 - Line 5", actionRequired: "Update the work instruction to reflect the revised inspection step.", dueDate: "2026-09-22" },
+        { personResponsible: "Team Member J", actionNo: 21121, location: "Site 1 - Line 5", actionRequired: "Close out the corrective action record and confirm effectiveness with a follow-up audit.", dueDate: "2026-09-25" }
+      ]
     },
 
     service: {
@@ -67,7 +72,12 @@ window.VPM_MOCK = {
       ok: false,
       triggerText: "Service Trigger is\n3 Days out of 5 where Volume Target is not met",
       milestones: [],
-      actions: []
+      actions: [
+        { personResponsible: "Team Member K", actionNo: 22004, location: "Site 1 - Line 2", actionRequired: "Confirm staffing plan for the upcoming volume ramp and flag any gaps.", dueDate: "2026-09-19" },
+        { personResponsible: "Team Member L", actionNo: 22011, location: "Site 1 - Line 2", actionRequired: "Investigate the changeover delay reported earlier this week and identify a fix.", dueDate: "2026-09-20" },
+        { personResponsible: "Team Member B", actionNo: 22017, location: "Site 1 - Line 3", actionRequired: "Review the order backlog with planning and confirm recovery timeline.", dueDate: "2026-09-23" },
+        { personResponsible: "Team Member M", actionNo: 22023, location: "Site 1 - Line 3", actionRequired: "Follow up with maintenance on the recurring downtime cause identified on the shift report.", dueDate: "2026-09-24" }
+      ]
     },
 
     cost: {
