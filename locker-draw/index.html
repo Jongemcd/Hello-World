@@ -867,9 +867,9 @@
       var filled = Math.round(pct * 20);
       var barText = new Array(filled + 1).join('█') + new Array(20 - filled + 1).join('░');
 
-      setFormula(wsDash, row, 1, 'Summary!B' + (groupLabel === 'Gents' ? 6 : 13), total);
-      setFormula(wsDash, row, 2, 'Summary!B' + (groupLabel === 'Gents' ? 7 : 14), assigned);
-      setFormula(wsDash, row, 3, 'Summary!B' + (groupLabel === 'Gents' ? 8 : 15), free);
+      setFormula(wsDash, row, 1, 'Summary!B' + (groupLabel === 'Gents' ? 6 : 12), total);
+      setFormula(wsDash, row, 2, 'Summary!B' + (groupLabel === 'Gents' ? 7 : 13), assigned);
+      setFormula(wsDash, row, 3, 'Summary!B' + (groupLabel === 'Gents' ? 8 : 14), free);
       var pctCell = XLSX.utils.encode_cell({r: row, c: 4});
       wsDash[pctCell] = { t: 'n', z: '0%', f: 'IF(B' + (row+1) + '=0,0,C' + (row+1) + '/B' + (row+1) + ')', v: pct };
       var barCell = XLSX.utils.encode_cell({r: row, c: 5});
