@@ -23,6 +23,21 @@ Turn on **Instant mode** (top toggle) to skip the animation entirely — the
 draw runs automatically the moment the file is uploaded and the list appears
 straight away.
 
+## One locker per person
+
+Each person on the list is placed into exactly one locker — the draw shuffles
+the list once and hands each entry off in turn, so nobody is picked twice from
+a clean list. The one thing the app can't know on its own is whether the
+*source file* has the same person entered twice by mistake. To catch that:
+
+- If the **same clock number** appears more than once, the app blocks the
+  draw with a warning until you either fix the source file and re-upload, or
+  tick a box confirming you've checked it and want to proceed anyway.
+- If the **same name** appears more than once with no clock number to tell
+  them apart, you get an informational note (not a block) — this is often
+  just two different colleagues sharing a name, so add clock numbers if you
+  want the app to be sure.
+
 ## The "4th locker" rule
 
 Lockers come in banks of four. By default, the app always leaves the 4th

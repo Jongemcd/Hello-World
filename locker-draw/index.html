@@ -128,6 +128,12 @@
   #uploadStatus.ok{color:var(--ok);}
   #uploadStatus.err{color:var(--warn);}
 
+  /* ---------- Duplicate warning ---------- */
+  .dup-warning{background:#fdecea;border:1px solid #f2b8b0;color:#7a2a1e;padding:16px 18px;border-radius:10px;margin-bottom:20px;}
+  .dup-warning strong{color:#7a2a1e;}
+  .dup-warning ul{margin:8px 0 4px;padding-left:20px;font-size:.87rem;line-height:1.55;}
+  .dup-ack{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:.85rem;font-weight:600;cursor:pointer;}
+
   /* ---------- Draw animation ---------- */
   #drawAnimation{margin-top:20px;text-align:center;}
   .reel{
@@ -242,6 +248,14 @@
       </div>
     </section>
 
+    <section id="duplicate-warning" class="dup-warning hidden">
+      <div id="duplicateWarningBody"></div>
+      <label class="dup-ack hidden" id="dupAckRow">
+        <input type="checkbox" id="dupAckCheckbox">
+        I've reviewed the duplicate clock numbers above and want to run the draw anyway
+      </label>
+    </section>
+
     <section id="draw-card" class="card hidden">
       <h2>3. Run the draw</h2>
       <div class="btn-row">
@@ -311,6 +325,11 @@
   var redrawBtn = document.getElementById('redrawBtn');
   var drawAnimation = document.getElementById('drawAnimation');
   var reelText = document.getElementById('reelText');
+  var duplicateWarningSection = document.getElementById('duplicate-warning');
+  var duplicateWarningBody = document.getElementById('duplicateWarningBody');
+  var dupAckRow = document.getElementById('dupAckRow');
+  var dupAckCheckbox = document.getElementById('dupAckCheckbox');
+  var duplicateInfo = { gents: null, ladies: null };
 
   // ---------- helpers ----------
   function fisherYatesShuffle(arr){
@@ -387,6 +406,91 @@
     return people;
   }
 
+  // Flags the same clock number appearing more than once (near-certain duplicate
+  // row) as blocking, and the same name with no clock number to tell them apart
+  // (could just be two different colleagues) as informational only.
+  function findDuplicates(people){
+    var byClock = {};
+    people.forEach(function(p){
+      if (!p.clockNumber) return;
+      (byClock[p.clockNumber] = byClock[p.clockNumber] || []).push(p);
+    });
+    var dupClockGroups = Object.keys(byClock)
+      .filter(function(k){ return byClock[k].length > 1; })
+      .map(function(k){ return { clockNumber: k, entries: byClock[k] }; });
+
+    var byName = {};
+    people.filter(function(p){ return !p.clockNumber; }).forEach(function(p){
+      var key = p.name.trim().toLowerCase();
+      (byName[key] = byName[key] || []).push(p);
+    });
+    var dupNameGroups = Object.keys(byName)
+      .filter(function(k){ return byName[k].length > 1; })
+      .map(function(k){ return { name: byName[k][0].name, entries: byName[k] }; });
+
+    return { dupClockGroups: dupClockGroups, dupNameGroups: dupNameGroups };
+  }
+
+  function hasBlockingDuplicates(){
+    return !!((duplicateInfo.gents && duplicateInfo.gents.dupClockGroups.length) ||
+              (duplicateInfo.ladies && duplicateInfo.ladies.dupClockGroups.length));
+  }
+
+  function refreshDuplicateCheck(){
+    if (!workbook) return;
+    var gentsSheet = workbook.Sheets[gentsSheetSelect.value];
+    var ladiesSheet = workbook.Sheets[ladiesSheetSelect.value];
+    duplicateInfo.gents = findDuplicates(gentsSheet ? parsePeopleSheet(gentsSheet) : []);
+    duplicateInfo.ladies = findDuplicates(ladiesSheet ? parsePeopleSheet(ladiesSheet) : []);
+    renderDuplicateWarning();
+  }
+
+  function renderDuplicateWarning(){
+    var blockingItems = [];
+    var infoItems = [];
+    [['gents','Gents'], ['ladies','Ladies']].forEach(function(pair){
+      var info = duplicateInfo[pair[0]];
+      if (!info) return;
+      info.dupClockGroups.forEach(function(g){
+        blockingItems.push('<li><strong>' + pair[1] + ':</strong> clock number <strong>' + g.clockNumber + '</strong> appears ' +
+          g.entries.length + ' times (' + g.entries.map(function(e){return e.name;}).join(', ') +
+          ') — looks like a duplicate row. Left as-is, this person would be drawn for ' + g.entries.length + ' lockers.</li>');
+      });
+      info.dupNameGroups.forEach(function(g){
+        infoItems.push('<li><strong>' + pair[1] + ':</strong> "' + g.name + '" appears ' + g.entries.length +
+          ' times with no clock number to tell them apart — add clock numbers if these are different people.</li>');
+      });
+    });
+
+    if (!blockingItems.length && !infoItems.length){
+      duplicateWarningSection.classList.add('hidden');
+      duplicateWarningBody.innerHTML = '';
+      dupAckRow.classList.add('hidden');
+      dupAckCheckbox.checked = false;
+      return;
+    }
+
+    var html = '';
+    if (blockingItems.length){
+      html += '<strong>⚠ Possible duplicate entries found — check before drawing</strong><ul>' + blockingItems.join('') + '</ul>';
+    }
+    if (infoItems.length){
+      html += '<strong>ℹ Same name, no clock number</strong><ul>' + infoItems.join('') + '</ul>';
+    }
+    duplicateWarningBody.innerHTML = html;
+    dupAckRow.classList.toggle('hidden', blockingItems.length === 0);
+    if (blockingItems.length === 0) dupAckCheckbox.checked = false;
+    duplicateWarningSection.classList.remove('hidden');
+  }
+
+  function blockedByDuplicates(){
+    if (hasBlockingDuplicates() && !dupAckCheckbox.checked){
+      duplicateWarningSection.scrollIntoView({behavior:'smooth', block:'center'});
+      return true;
+    }
+    return false;
+  }
+
   function populateSheetSelects(){
     [gentsSheetSelect, ladiesSheetSelect].forEach(function(sel){
       sel.innerHTML = '';
@@ -422,9 +526,14 @@
         uploadStatus.textContent = '✓ Loaded "' + file.name + '" — ' + sheetNames.length + ' tab(s) found.';
         settingsCard.classList.remove('hidden');
         drawCard.classList.remove('hidden');
+        refreshDuplicateCheck();
 
         if (instantModeToggle.checked){
-          runDraw(true);
+          if (hasBlockingDuplicates()){
+            duplicateWarningSection.scrollIntoView({behavior:'smooth', block:'center'});
+          } else {
+            runDraw(true);
+          }
         }
       }catch(err){
         uploadStatus.className = 'err';
@@ -521,12 +630,17 @@
     }, 90);
   }
 
+  gentsSheetSelect.addEventListener('change', refreshDuplicateCheck);
+  ladiesSheetSelect.addEventListener('change', refreshDuplicateCheck);
+
   runDrawBtn.addEventListener('click', function(){
     if (!workbook){ alert('Please upload an Excel file first.'); return; }
+    if (blockedByDuplicates()) return;
     runDraw(instantModeToggle.checked);
   });
   redrawBtn.addEventListener('click', function(){
     if (!confirm('This will generate a brand new random locker order. Continue?')) return;
+    if (blockedByDuplicates()) return;
     runDraw(instantModeToggle.checked);
   });
 
