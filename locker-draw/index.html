@@ -7,20 +7,23 @@
 <script src="vendor/xlsx.full.min.js"></script>
 <style>
   :root{
-    --steel-1:#1f2b38;
-    --steel-2:#2c3e50;
-    --steel-3:#3b5169;
-    --accent:#e8833a;
-    --accent-2:#4fb0a5;
+    /* Hollister brand palette, sampled from hollister.co.uk */
+    --brand-red:#c01e39;
+    --brand-red-dark:#9c1830;
+    --charcoal:#1a1a1a;
+    --taupe:#8b8078;
+    --accent:#c01e39;
+    --accent-2:#1a1a1a;
     --panel:#ffffff;
-    --panel-border:#dbe2ea;
-    --text:#1f2b38;
-    --text-muted:#5c6b7a;
+    --panel-border:#e3ded9;
+    --text:#1a1a1a;
+    --text-muted:#6b6560;
     --ok:#2e9e6b;
-    --warn:#c0392b;
-    --bg:#eef2f6;
+    --warn:#c01e39;
+    --bg:#f5f5f5;
   }
   *{box-sizing:border-box;}
+  input[type=checkbox]{accent-color:var(--brand-red);}
   body{
     margin:0;
     font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;
@@ -31,13 +34,18 @@
 
   /* ---------- Hero / lockers graphic ---------- */
   .hero{
-    background:linear-gradient(180deg,var(--steel-1),var(--steel-3));
-    color:#fff;
-    padding:36px 20px 24px;
+    background:var(--panel);
     margin:0 -20px 28px;
-    text-align:center;
     overflow:hidden;
     position:relative;
+    border-bottom:4px solid var(--charcoal);
+  }
+  .hero-top{padding:30px 20px 22px;text-align:center;}
+  .hero-top h1{margin:0 0 6px;font-size:1.9rem;color:var(--text);}
+  .hero-top p.subtitle{margin:0;color:var(--text-muted);font-size:.98rem;}
+  .hero-band{
+    background:var(--brand-red);
+    padding:20px 20px 22px;
   }
   .lockers-row{
     display:flex;
@@ -49,26 +57,23 @@
   .locker-door{
     width:34px;height:64px;
     border-radius:4px;
-    border:2px solid rgba(255,255,255,.25);
+    border:2px solid rgba(255,255,255,.35);
     position:relative;
-    background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.15));
+    background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(0,0,0,.15));
   }
   .locker-door::before{
     content:'';
     position:absolute;left:6px;top:6px;bottom:6px;width:2px;
-    background:repeating-linear-gradient(0deg,rgba(255,255,255,.35) 0 3px, transparent 3px 7px);
+    background:repeating-linear-gradient(0deg,rgba(255,255,255,.4) 0 3px, transparent 3px 7px);
   }
   .locker-door::after{
     content:'';
     position:absolute;right:5px;top:50%;transform:translateY(-50%);
-    width:5px;height:9px;border-radius:2px;background:var(--accent);
+    width:5px;height:9px;border-radius:2px;background:#fff;
   }
-  .locker-door.reserved{border-style:dashed;opacity:.55;}
-  .locker-door:nth-child(4n){border-color:var(--accent-2);}
-  .people-row{display:flex;justify-content:center;gap:14px;opacity:.85;margin-bottom:6px;}
-  .people-row svg{width:22px;height:22px;fill:rgba(255,255,255,.8);}
-  .hero h1{margin:6px 0 4px;font-size:1.9rem;}
-  .hero p.subtitle{margin:0;color:rgba(255,255,255,.75);font-size:.98rem;}
+  .locker-door.reserved{border-style:dashed;border-color:rgba(255,255,255,.9);opacity:.7;}
+  .people-row{display:flex;justify-content:center;gap:14px;opacity:.9;margin-bottom:0;}
+  .people-row svg{width:22px;height:22px;fill:rgba(255,255,255,.85);}
 
   /* ---------- Cards ---------- */
   .card{
@@ -79,7 +84,7 @@
     margin-bottom:20px;
     box-shadow:0 1px 3px rgba(0,0,0,.04);
   }
-  .card h2{margin-top:0;font-size:1.15rem;color:var(--steel-2);}
+  .card h2{margin-top:0;font-size:1.15rem;color:var(--charcoal);}
   .hidden{display:none !important;}
   .hint{color:var(--text-muted);font-size:.9rem;}
 
@@ -87,7 +92,7 @@
   .toggle-row{display:flex;align-items:center;gap:12px;margin:10px 0 18px;}
   .switch{position:relative;display:inline-block;width:46px;height:26px;flex:none;}
   .switch input{opacity:0;width:0;height:0;}
-  .slider{position:absolute;cursor:pointer;inset:0;background:#c7d0da;border-radius:26px;transition:.2s;}
+  .slider{position:absolute;cursor:pointer;inset:0;background:#d8d2ce;border-radius:26px;transition:.2s;}
   .slider::before{content:'';position:absolute;height:20px;width:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
   input:checked + .slider{background:var(--accent-2);}
   input:checked + .slider::before{transform:translateX(20px);}
@@ -101,13 +106,13 @@
   }
   .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:12px;}
   @media (max-width:680px){.settings-grid{grid-template-columns:1fr;}}
-  .settings-col h3{margin:0 0 8px;font-size:.95rem;color:var(--steel-2);}
+  .settings-col h3{margin:0 0 8px;font-size:.95rem;color:var(--charcoal);}
   .settings-col label{display:block;font-size:.85rem;color:var(--text-muted);margin:8px 0 3px;}
   .settings-col select, .settings-col input[type=text], .settings-col input[type=number]{
     width:100%;padding:8px 10px;border:1px solid var(--panel-border);border-radius:6px;font-size:.9rem;
   }
   .row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .checkbox-row{display:flex;align-items:flex-start;gap:8px;margin-top:16px;background:#f5f8fa;padding:10px 12px;border-radius:8px;}
+  .checkbox-row{display:flex;align-items:flex-start;gap:8px;margin-top:16px;background:#f5f5f5;padding:10px 12px;border-radius:8px;border-left:3px solid var(--brand-red);}
   .checkbox-row input{margin-top:3px;}
   .checkbox-row span{font-size:.85rem;color:var(--text-muted);}
 
@@ -115,13 +120,13 @@
     background:var(--accent);color:#fff;border:none;padding:12px 26px;font-size:1rem;
     border-radius:8px;cursor:pointer;font-weight:600;transition:transform .1s, background .15s;
   }
-  .btn-primary:hover{background:#d3722a;}
+  .btn-primary:hover{background:var(--brand-red-dark);}
   .btn-primary:active{transform:scale(.98);}
   .btn-secondary{
-    background:#fff;color:var(--steel-2);border:1px solid var(--panel-border);padding:10px 20px;
+    background:#fff;color:var(--charcoal);border:1px solid var(--panel-border);padding:10px 20px;
     border-radius:8px;cursor:pointer;font-weight:600;font-size:.9rem;
   }
-  .btn-secondary:hover{background:#f2f5f8;}
+  .btn-secondary:hover{background:#f5f5f5;}
   .btn-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
 
   #uploadStatus{font-size:.9rem;margin-top:6px;}
@@ -129,23 +134,23 @@
   #uploadStatus.err{color:var(--warn);}
 
   /* ---------- Duplicate warning ---------- */
-  .dup-warning{background:#fdecea;border:1px solid #f2b8b0;color:#7a2a1e;padding:16px 18px;border-radius:10px;margin-bottom:20px;}
-  .dup-warning strong{color:#7a2a1e;}
+  .dup-warning{background:#fbe9ec;border:1px solid #e8b3bd;color:#7a1226;padding:16px 18px;border-radius:10px;margin-bottom:20px;}
+  .dup-warning strong{color:#7a1226;}
   .dup-warning ul{margin:8px 0 4px;padding-left:20px;font-size:.87rem;line-height:1.55;}
   .dup-ack{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:.85rem;font-weight:600;cursor:pointer;}
 
   /* ---------- Draw animation ---------- */
   #drawAnimation{margin-top:20px;text-align:center;}
   .reel{
-    display:inline-block;min-width:260px;padding:18px 30px;background:var(--steel-2);color:#fff;
+    display:inline-block;min-width:260px;padding:18px 30px;background:var(--charcoal);color:#fff;
     border-radius:10px;font-size:1.3rem;font-weight:700;letter-spacing:.5px;
   }
   .reel small{display:block;font-weight:400;font-size:.75rem;color:rgba(255,255,255,.6);margin-top:4px;}
 
   /* ---------- Results ---------- */
   .stats-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px;}
-  .stat{background:#f5f8fa;border-radius:8px;padding:10px 16px;min-width:120px;}
-  .stat .num{font-size:1.4rem;font-weight:700;color:var(--steel-2);}
+  .stat{background:#f5f5f5;border-radius:8px;padding:10px 16px;min-width:120px;}
+  .stat .num{font-size:1.4rem;font-weight:700;color:var(--charcoal);}
   .stat .lbl{font-size:.78rem;color:var(--text-muted);}
 
   .tabs{display:flex;gap:8px;margin-bottom:14px;}
@@ -153,18 +158,18 @@
     padding:9px 18px;border-radius:20px;border:1px solid var(--panel-border);background:#fff;
     cursor:pointer;font-weight:600;font-size:.88rem;color:var(--text-muted);
   }
-  .tab-btn.active{background:var(--steel-2);color:#fff;border-color:var(--steel-2);}
+  .tab-btn.active{background:var(--charcoal);color:#fff;border-color:var(--charcoal);}
 
   .search-export{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
   #searchBox{flex:1;min-width:180px;padding:9px 12px;border:1px solid var(--panel-border);border-radius:6px;}
 
   table{width:100%;border-collapse:collapse;font-size:.9rem;}
   thead th{
-    text-align:left;background:var(--steel-2);color:#fff;padding:9px 12px;position:sticky;top:0;
+    text-align:left;background:var(--charcoal);color:#fff;padding:9px 12px;position:sticky;top:0;
   }
   tbody td{padding:8px 12px;border-bottom:1px solid var(--panel-border);}
-  tbody tr.bank-start td{border-top:2px solid var(--steel-3);}
-  tr.reserved td{color:var(--text-muted);font-style:italic;background:#fafbfc;}
+  tbody tr.bank-start td{border-top:2px solid var(--brand-red);}
+  tr.reserved td{color:var(--text-muted);font-style:italic;background:#fafafa;}
   .table-wrap{max-height:560px;overflow:auto;border:1px solid var(--panel-border);border-radius:8px;}
 
   footer{text-align:center;color:var(--text-muted);font-size:.8rem;margin-top:30px;}
@@ -174,14 +179,18 @@
 <div class="app">
 
   <header class="hero">
-    <div class="lockers-row" id="lockersRow"></div>
-    <div class="people-row">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="3"/><path d="M12 10c-4 0-6 2.5-6 6v4h12v-4c0-3.5-2-6-6-6z"/></svg>
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="3"/><path d="M12 10c-4 0-6 2.5-6 6v4h12v-4c0-3.5-2-6-6-6z"/></svg>
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="3"/><path d="M12 10c-4 0-6 2.5-6 6v4h12v-4c0-3.5-2-6-6-6z"/></svg>
+    <div class="hero-top">
+      <h1>🔒 Changing Room Locker Draw</h1>
+      <p class="subtitle">Fair, random locker assignments for the Gents &amp; Ladies changing rooms</p>
     </div>
-    <h1>🔒 Changing Room Locker Draw</h1>
-    <p class="subtitle">Fair, random locker assignments for the Gents &amp; Ladies changing rooms</p>
+    <div class="hero-band">
+      <div class="lockers-row" id="lockersRow"></div>
+      <div class="people-row">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="3"/><path d="M12 10c-4 0-6 2.5-6 6v4h12v-4c0-3.5-2-6-6-6z"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="3"/><path d="M12 10c-4 0-6 2.5-6 6v4h12v-4c0-3.5-2-6-6-6z"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="3"/><path d="M12 10c-4 0-6 2.5-6 6v4h12v-4c0-3.5-2-6-6-6z"/></svg>
+      </div>
+    </div>
   </header>
 
   <main>
@@ -750,7 +759,7 @@
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     var ctx = canvas.getContext('2d');
-    var colors = ['#e8833a','#4fb0a5','#3b5169','#f1c40f','#e74c3c'];
+    var colors = ['#c01e39','#1a1a1a','#8b8078','#ffffff','#e8899a'];
     var particles = [];
     for (var i=0;i<140;i++){
       particles.push({

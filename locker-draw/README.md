@@ -45,6 +45,13 @@ locker in every bank **Unassigned (reserved)**, so there's spare capacity to
 add new starts later without re-running the whole draw. This can be turned
 off in Settings if a future draw doesn't need it.
 
+## Branding
+
+The colors (crimson `#C01E39`, charcoal, white, warm taupe/grey) are sampled
+from Hollister's own site so the tool looks at home alongside other internal
+Hollister pages. The decorative locker/people graphics are drawn in CSS/SVG
+rather than reusing any photography from the site.
+
 ## Notes
 
 - Everything runs locally in your browser — the uploaded list and results
