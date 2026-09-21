@@ -45,6 +45,37 @@ locker in every bank **Unassigned (reserved)**, so there's spare capacity to
 add new starts later without re-running the whole draw. This can be turned
 off in Settings if a future draw doesn't need it.
 
+## Actual lockers on site
+
+By default the app sizes the lockers to exactly fit everyone on the list
+(rounded up to full banks of four). If your changing room has a fixed
+physical count instead, enter it under **Actual lockers on site** in
+Settings for each group — the draw will then use exactly that number of
+lockers rather than auto-sizing.
+
+If there are more people than that fixed count can hold (after the 4th-locker
+reservation), the draw won't silently drop anyone: it blocks with a warning
+telling you exactly how many people won't get a locker, and once run, those
+people are listed at the bottom of the results/export marked **"No locker
+available"** so nothing is lost track of.
+
+## Summary tab stays live
+
+The exported **Summary** and **Dashboard** sheets use real Excel formulas
+(`COUNTIF` against the Status column), not fixed numbers. So if you later
+open the export and fill in a name + clock number on a locker that was
+previously "Unassigned", the Assigned/Remaining counts on the Summary and
+Dashboard tabs update automatically the next time Excel recalculates
+(normally as soon as you edit the sheet or reopen the file).
+
+The **Dashboard** tab shows Total / Assigned / Remaining / % Assigned for
+each group plus a simple text bar. Note: the free, client-side Excel library
+this tool uses can't write native charts or cell colors, so there's no
+colored KPI tiles or an embedded pie/bar chart — just live formulas and a
+plain block-character bar. If you want an actual chart, select the
+Dashboard's table and use Excel's own Insert → Chart — it'll build off the
+live numbers already there.
+
 ## Branding
 
 The colors (crimson `#C01E39`, charcoal, white, warm taupe/grey) are sampled

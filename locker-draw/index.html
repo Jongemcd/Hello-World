@@ -170,6 +170,7 @@
   tbody td{padding:8px 12px;border-bottom:1px solid var(--panel-border);}
   tbody tr.bank-start td{border-top:2px solid var(--brand-red);}
   tr.reserved td{color:var(--text-muted);font-style:italic;background:#fafafa;}
+  tr.no-locker td{color:#7a1226;font-weight:600;background:#fbe9ec;}
   .table-wrap{max-height:560px;overflow:auto;border:1px solid var(--panel-border);border-radius:8px;}
 
   footer{text-align:center;color:var(--text-muted);font-size:.8rem;margin-top:30px;}
@@ -233,6 +234,8 @@
               <input type="number" id="gentsStart" value="1" min="1">
             </div>
           </div>
+          <label>Actual lockers on site</label>
+          <input type="number" id="gentsLockerCount" min="0" placeholder="Auto (fit everyone)">
         </div>
         <div class="settings-col">
           <h3>Ladies</h3>
@@ -248,8 +251,11 @@
               <input type="number" id="ladiesStart" value="1" min="1">
             </div>
           </div>
+          <label>Actual lockers on site</label>
+          <input type="number" id="ladiesLockerCount" min="0" placeholder="Auto (fit everyone)">
         </div>
       </div>
+      <p class="hint" style="margin-top:10px;">Leave "Actual lockers on site" blank to size the lockers to exactly fit everyone. Enter the real physical count and the draw will use that fixed number instead — handy if the changing room has more (or fewer) lockers than people.</p>
       <div class="checkbox-row">
         <input type="checkbox" id="reserveFourthToggle" checked>
         <span><strong>Reserve every 4th locker in each bank of 4 as "Unassigned"</strong><br>
@@ -261,7 +267,7 @@
       <div id="duplicateWarningBody"></div>
       <label class="dup-ack hidden" id="dupAckRow">
         <input type="checkbox" id="dupAckCheckbox">
-        I've reviewed the duplicate clock numbers above and want to run the draw anyway
+        I've reviewed the issues above and want to run the draw anyway
       </label>
     </section>
 
@@ -339,6 +345,9 @@
   var dupAckRow = document.getElementById('dupAckRow');
   var dupAckCheckbox = document.getElementById('dupAckCheckbox');
   var duplicateInfo = { gents: null, ladies: null };
+  var capacityInfo = { gents: null, ladies: null };
+  var gentsLockerCount = document.getElementById('gentsLockerCount');
+  var ladiesLockerCount = document.getElementById('ladiesLockerCount');
 
   // ---------- helpers ----------
   function fisherYatesShuffle(arr){
@@ -440,17 +449,43 @@
     return { dupClockGroups: dupClockGroups, dupNameGroups: dupNameGroups };
   }
 
+  // Simulates the bank layout to work out how many of a fixed locker count are
+  // reserved (every 4th) vs assignable, without needing to actually run the draw.
+  function countReservedSlots(totalLockers, reserveFourth){
+    if (!reserveFourth) return 0;
+    var reserved = 0;
+    for (var i=0;i<totalLockers;i++){
+      if ((i % 4) + 1 === 4) reserved++;
+    }
+    return reserved;
+  }
+
+  function checkCapacity(peopleCount, capacityInputValue, reserveFourth){
+    var capacity = parseInt(capacityInputValue, 10) || 0;
+    if (capacity <= 0) return null; // auto-size: no fixed constraint, can't overflow
+    var reserved = countReservedSlots(capacity, reserveFourth);
+    var assignable = capacity - reserved;
+    var overflow = Math.max(0, peopleCount - assignable);
+    if (overflow <= 0) return null;
+    return { capacity: capacity, reserved: reserved, assignable: assignable, peopleCount: peopleCount, overflow: overflow };
+  }
+
   function hasBlockingDuplicates(){
     return !!((duplicateInfo.gents && duplicateInfo.gents.dupClockGroups.length) ||
-              (duplicateInfo.ladies && duplicateInfo.ladies.dupClockGroups.length));
+              (duplicateInfo.ladies && duplicateInfo.ladies.dupClockGroups.length) ||
+              capacityInfo.gents || capacityInfo.ladies);
   }
 
   function refreshDuplicateCheck(){
     if (!workbook) return;
     var gentsSheet = workbook.Sheets[gentsSheetSelect.value];
     var ladiesSheet = workbook.Sheets[ladiesSheetSelect.value];
-    duplicateInfo.gents = findDuplicates(gentsSheet ? parsePeopleSheet(gentsSheet) : []);
-    duplicateInfo.ladies = findDuplicates(ladiesSheet ? parsePeopleSheet(ladiesSheet) : []);
+    var gentsPeople = gentsSheet ? parsePeopleSheet(gentsSheet) : [];
+    var ladiesPeople = ladiesSheet ? parsePeopleSheet(ladiesSheet) : [];
+    duplicateInfo.gents = findDuplicates(gentsPeople);
+    duplicateInfo.ladies = findDuplicates(ladiesPeople);
+    capacityInfo.gents = checkCapacity(gentsPeople.length, gentsLockerCount.value, reserveFourthToggle.checked);
+    capacityInfo.ladies = checkCapacity(ladiesPeople.length, ladiesLockerCount.value, reserveFourthToggle.checked);
     renderDuplicateWarning();
   }
 
@@ -469,6 +504,12 @@
         infoItems.push('<li><strong>' + pair[1] + ':</strong> "' + g.name + '" appears ' + g.entries.length +
           ' times with no clock number to tell them apart — add clock numbers if these are different people.</li>');
       });
+      var cap = capacityInfo[pair[0]];
+      if (cap){
+        blockingItems.push('<li><strong>' + pair[1] + ':</strong> ' + cap.peopleCount + ' people but only ' + cap.assignable +
+          ' of the ' + cap.capacity + ' lockers on site can be assigned (' + cap.reserved + ' reserved) — ' + cap.overflow +
+          ' ' + (cap.overflow === 1 ? 'person' : 'people') + ' won\'t get a locker unless you increase the locker count or clear it to auto-size.</li>');
+      }
     });
 
     if (!blockingItems.length && !infoItems.length){
@@ -481,7 +522,7 @@
 
     var html = '';
     if (blockingItems.length){
-      html += '<strong>⚠ Possible duplicate entries found — check before drawing</strong><ul>' + blockingItems.join('') + '</ul>';
+      html += '<strong>⚠ Issues found — check before drawing</strong><ul>' + blockingItems.join('') + '</ul>';
     }
     if (infoItems.length){
       html += '<strong>ℹ Same name, no clock number</strong><ul>' + infoItems.join('') + '</ul>';
@@ -555,30 +596,42 @@
   });
 
   // ---------- locker plan builder ----------
-  function buildLockerPlan(people, prefix, startNumber, reserveFourth){
+  // actualCount > 0 fixes the locker count to a real physical total (e.g. lockers
+  // actually on site); anyone beyond capacity is appended as a "No locker
+  // available" entry rather than silently dropped. actualCount <= 0 auto-sizes
+  // to exactly fit everyone (the previous behaviour), so it can never overflow.
+  function buildLockerPlan(people, prefix, startNumber, reserveFourth, actualCount){
     var shuffled = fisherYatesShuffle(people);
     var bankSize = 4;
-    var usableSlots = reserveFourth ? 3 : 4;
-    var numBanks = Math.max(1, Math.ceil(shuffled.length / usableSlots));
+    var totalLockers;
+    if (actualCount > 0){
+      totalLockers = actualCount;
+    } else {
+      var usableSlots = reserveFourth ? 3 : 4;
+      var numBanks = Math.max(1, Math.ceil(shuffled.length / usableSlots));
+      totalLockers = numBanks * bankSize;
+    }
     var lockers = [];
     var personIndex = 0;
-    for (var bank=1; bank<=numBanks; bank++){
-      for (var slot=1; slot<=bankSize; slot++){
-        var offset = (bank-1)*bankSize + (slot-1);
-        var lockerNumber = startNumber + offset;
-        var isReservedSlot = reserveFourth && slot === bankSize;
-        var person = null;
-        if (!isReservedSlot && personIndex < shuffled.length){
-          person = shuffled[personIndex++];
-        }
-        lockers.push({
-          bank: bank,
-          slot: slot,
-          lockerId: prefix + lockerNumber,
-          person: person,
-          status: person ? 'Assigned' : (isReservedSlot ? 'Unassigned (reserved)' : 'Unassigned (spare)')
-        });
+    for (var i=0; i<totalLockers; i++){
+      var bank = Math.floor(i / bankSize) + 1;
+      var slot = (i % bankSize) + 1;
+      var lockerNumber = startNumber + i;
+      var isReservedSlot = reserveFourth && slot === bankSize;
+      var person = null;
+      if (!isReservedSlot && personIndex < shuffled.length){
+        person = shuffled[personIndex++];
       }
+      lockers.push({
+        bank: bank,
+        slot: slot,
+        lockerId: prefix + lockerNumber,
+        person: person,
+        status: person ? 'Assigned' : (isReservedSlot ? 'Unassigned (reserved)' : 'Unassigned (spare)')
+      });
+    }
+    for (; personIndex < shuffled.length; personIndex++){
+      lockers.push({ bank: '—', slot: null, lockerId: '—', person: shuffled[personIndex], status: 'No locker available' });
     }
     return lockers;
   }
@@ -595,13 +648,15 @@
       gentsPeople,
       document.getElementById('gentsPrefix').value.trim(),
       parseInt(document.getElementById('gentsStart').value, 10) || 1,
-      reserveFourth
+      reserveFourth,
+      parseInt(gentsLockerCount.value, 10) || 0
     );
     drawResults.ladies = buildLockerPlan(
       ladiesPeople,
       document.getElementById('ladiesPrefix').value.trim(),
       parseInt(document.getElementById('ladiesStart').value, 10) || 1,
-      reserveFourth
+      reserveFourth,
+      parseInt(ladiesLockerCount.value, 10) || 0
     );
   }
 
@@ -641,6 +696,9 @@
 
   gentsSheetSelect.addEventListener('change', refreshDuplicateCheck);
   ladiesSheetSelect.addEventListener('change', refreshDuplicateCheck);
+  gentsLockerCount.addEventListener('input', refreshDuplicateCheck);
+  ladiesLockerCount.addEventListener('input', refreshDuplicateCheck);
+  reserveFourthToggle.addEventListener('change', refreshDuplicateCheck);
 
   runDrawBtn.addEventListener('click', function(){
     if (!workbook){ alert('Please upload an Excel file first.'); return; }
@@ -671,13 +729,18 @@
 
   function renderStats(){
     var g = drawResults.gents, l = drawResults.ladies;
-    function count(list, pred){ return list.filter(pred).length; }
+    function count(list, status){ return list.filter(function(x){return x.status === status;}).length; }
+    function countFree(list){ return list.filter(function(x){return x.status.indexOf('Unassigned') === 0;}).length; }
     var stats = [
-      {num: count(g,function(x){return x.person;}), lbl:'Gents assigned'},
-      {num: count(g,function(x){return !x.person;}), lbl:'Gents lockers free'},
-      {num: count(l,function(x){return x.person;}), lbl:'Ladies assigned'},
-      {num: count(l,function(x){return !x.person;}), lbl:'Ladies lockers free'}
+      {num: count(g,'Assigned'), lbl:'Gents assigned'},
+      {num: countFree(g), lbl:'Gents lockers free'},
+      {num: count(l,'Assigned'), lbl:'Ladies assigned'},
+      {num: countFree(l), lbl:'Ladies lockers free'}
     ];
+    var gentsOverflow = count(g, 'No locker available');
+    var ladiesOverflow = count(l, 'No locker available');
+    if (gentsOverflow) stats.push({num: gentsOverflow, lbl:'Gents without a locker'});
+    if (ladiesOverflow) stats.push({num: ladiesOverflow, lbl:'Ladies without a locker'});
     statsRow.innerHTML = stats.map(function(s){
       return '<div class="stat"><div class="num">'+s.num+'</div><div class="lbl">'+s.lbl+'</div></div>';
     }).join('');
@@ -698,10 +761,12 @@
     }
     var rows = list.map(function(l){
       var isBankStart = l.slot === 1;
-      var reserved = !l.person;
-      return '<tr class="'+(isBankStart?'bank-start ':'')+(reserved?'reserved':'')+'">' +
+      var isNoLocker = l.status === 'No locker available';
+      var reserved = !l.person && !isNoLocker;
+      var rowClass = (isBankStart?'bank-start ':'') + (reserved?'reserved':'') + (isNoLocker?'no-locker':'');
+      return '<tr class="'+rowClass+'">' +
         '<td>'+l.lockerId+'</td>' +
-        '<td>Bank '+l.bank+'</td>' +
+        '<td>'+(l.bank === '—' ? '—' : 'Bank '+l.bank)+'</td>' +
         '<td>'+(l.person ? l.person.index : '—')+'</td>' +
         '<td>'+(l.person && l.person.clockNumber ? l.person.clockNumber : '—')+'</td>' +
         '<td>'+(l.person ? l.person.name : '—')+'</td>' +
@@ -737,16 +802,81 @@
     XLSX.utils.book_append_sheet(wb, wsGents, 'Gents Lockers');
     XLSX.utils.book_append_sheet(wb, wsLadies, 'Ladies Lockers');
 
-    var summary = [
-      {Metric:'Draw date', Value: new Date().toLocaleString()},
-      {Metric:'Gents assigned', Value: drawResults.gents.filter(function(x){return x.person;}).length},
-      {Metric:'Gents lockers free', Value: drawResults.gents.filter(function(x){return !x.person;}).length},
-      {Metric:'Ladies assigned', Value: drawResults.ladies.filter(function(x){return x.person;}).length},
-      {Metric:'Ladies lockers free', Value: drawResults.ladies.filter(function(x){return !x.person;}).length},
-      {Metric:'4th-locker reserved rule', Value: reserveFourthToggle.checked ? 'On' : 'Off'}
+    // Status column is F on both sheets (Locker, Bank, Index, Clock No, Assigned To, Status).
+    // COUNTIF formulas below are live: editing a Lockers sheet later (e.g. filling in a
+    // name+clock number on a previously "Unassigned" row) and reopening/recalculating in
+    // Excel updates these counts automatically, rather than leaving stale numbers behind.
+    function countByStatus(list, status){ return list.filter(function(x){return x.status === status;}).length; }
+    function countFree(list){ return list.filter(function(x){return x.status.indexOf('Unassigned') === 0;}).length; }
+    var gentsAssigned = countByStatus(drawResults.gents, 'Assigned');
+    var gentsFree = countFree(drawResults.gents);
+    var gentsNoLocker = countByStatus(drawResults.gents, 'No locker available');
+    var ladiesAssigned = countByStatus(drawResults.ladies, 'Assigned');
+    var ladiesFree = countFree(drawResults.ladies);
+    var ladiesNoLocker = countByStatus(drawResults.ladies, 'No locker available');
+
+    function setFormula(ws, row, col, formula, cachedValue){
+      ws[XLSX.utils.encode_cell({r: row, c: col})] = { t: 'n', f: formula, v: cachedValue };
+    }
+
+    var summaryRows = [
+      ['Metric', 'Value'],
+      ['Draw date', new Date().toLocaleString()],
+      ['4th-locker reserved rule', reserveFourthToggle.checked ? 'On' : 'Off'],
+      ['', ''],
+      ['GENTS', ''],
+      ['Gents total lockers', 0],
+      ['Gents assigned', 0],
+      ['Gents remaining (free) lockers', 0],
+      ['Gents people without a locker', 0],
+      ['', ''],
+      ['LADIES', ''],
+      ['Ladies total lockers', 0],
+      ['Ladies assigned', 0],
+      ['Ladies remaining (free) lockers', 0],
+      ['Ladies people without a locker', 0]
     ];
-    var wsSummary = XLSX.utils.json_to_sheet(summary);
+    var wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+    setFormula(wsSummary, 5, 1, "COUNTIF('Gents Lockers'!F:F,\"Assigned\")+COUNTIF('Gents Lockers'!F:F,\"Unassigned*\")", gentsAssigned + gentsFree);
+    setFormula(wsSummary, 6, 1, "COUNTIF('Gents Lockers'!F:F,\"Assigned\")", gentsAssigned);
+    setFormula(wsSummary, 7, 1, "COUNTIF('Gents Lockers'!F:F,\"Unassigned*\")", gentsFree);
+    setFormula(wsSummary, 8, 1, "COUNTIF('Gents Lockers'!F:F,\"No locker available\")", gentsNoLocker);
+    setFormula(wsSummary, 11, 1, "COUNTIF('Ladies Lockers'!F:F,\"Assigned\")+COUNTIF('Ladies Lockers'!F:F,\"Unassigned*\")", ladiesAssigned + ladiesFree);
+    setFormula(wsSummary, 12, 1, "COUNTIF('Ladies Lockers'!F:F,\"Assigned\")", ladiesAssigned);
+    setFormula(wsSummary, 13, 1, "COUNTIF('Ladies Lockers'!F:F,\"Unassigned*\")", ladiesFree);
+    setFormula(wsSummary, 14, 1, "COUNTIF('Ladies Lockers'!F:F,\"No locker available\")", ladiesNoLocker);
     XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+    // Dashboard: a simple live view built only from formulas + number formats. The free,
+    // client-side Excel library this tool uses can't write native charts or cell colors,
+    // so this uses a text block-bar (via REPT) instead of a real chart — but the numbers
+    // and bars stay live off the Summary sheet's formulas. Select the table below and use
+    // Excel's own Insert > Chart for a real chart in a couple of clicks if you want one.
+    var dashRows = [
+      ['Changing Room Locker Draw — Dashboard', '', '', '', ''],
+      ['', '', '', '', ''],
+      ['Group', 'Total', 'Assigned', 'Remaining', '% Assigned', 'Visual'],
+      ['Gents', 0, 0, 0, 0, ''],
+      ['Ladies', 0, 0, 0, 0, '']
+    ];
+    var wsDash = XLSX.utils.aoa_to_sheet(dashRows);
+    [ ['Gents', 3, gentsAssigned, gentsFree], ['Ladies', 4, ladiesAssigned, ladiesFree] ].forEach(function(pair){
+      var groupLabel = pair[0], row = pair[1], assigned = pair[2], free = pair[3];
+      var total = assigned + free;
+      var pct = total ? assigned / total : 0;
+      var filled = Math.round(pct * 20);
+      var barText = new Array(filled + 1).join('█') + new Array(20 - filled + 1).join('░');
+
+      setFormula(wsDash, row, 1, 'Summary!B' + (groupLabel === 'Gents' ? 6 : 13), total);
+      setFormula(wsDash, row, 2, 'Summary!B' + (groupLabel === 'Gents' ? 7 : 14), assigned);
+      setFormula(wsDash, row, 3, 'Summary!B' + (groupLabel === 'Gents' ? 8 : 15), free);
+      var pctCell = XLSX.utils.encode_cell({r: row, c: 4});
+      wsDash[pctCell] = { t: 'n', z: '0%', f: 'IF(B' + (row+1) + '=0,0,C' + (row+1) + '/B' + (row+1) + ')', v: pct };
+      var barCell = XLSX.utils.encode_cell({r: row, c: 5});
+      wsDash[barCell] = { t: 's', f: 'REPT("█",ROUND(E' + (row+1) + '*20,0))&REPT("░",20-ROUND(E' + (row+1) + '*20,0))', v: barText };
+    });
+    wsDash['!cols'] = [{wch:10},{wch:8},{wch:9},{wch:10},{wch:11},{wch:24}];
+    XLSX.utils.book_append_sheet(wb, wsDash, 'Dashboard');
 
     var dateStr = new Date().toISOString().slice(0,10);
     XLSX.writeFile(wb, 'Locker_Draw_Results_' + dateStr + '.xlsx');
