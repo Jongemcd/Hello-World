@@ -7,8 +7,11 @@ to staff, for the Gents and Ladies changing rooms.
 
 1. Open `index.html` in a web browser (double-click it — no install or server needed).
 2. Upload your Excel file. It should have a **Men** tab and a **Ladies** tab,
-   each with one name per row (a header row like "Name" is fine — it's
-   detected and skipped automatically).
+   each with a header row containing a **Name** column, plus optional
+   **Index** and **Clock Number** columns — these help tell people apart when
+   two team members share a name, and both are carried through to the results
+   and the export. Older, header-less lists (just a name per row) still work;
+   the app falls back to numbering rows itself and leaves clock number blank.
 3. Check the **Settings** — the app guesses which tab is which, but you can
    change it, and set a locker prefix/start number for each group to match
    your physical locker numbering.

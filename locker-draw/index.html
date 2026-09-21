@@ -195,7 +195,7 @@
 
     <section id="upload-card" class="card">
       <h2>1. Upload your list</h2>
-      <p class="hint">An Excel file (.xlsx) with a <strong>Men</strong> tab and a <strong>Ladies</strong> tab. One name per row, first column.</p>
+      <p class="hint">An Excel file (.xlsx) with a <strong>Men</strong> tab and a <strong>Ladies</strong> tab. Each row needs a <strong>Name</strong>, plus optional <strong>Index</strong> and <strong>Clock Number</strong> columns — handy for telling apart people who share a name.</p>
       <input type="file" id="fileInput" accept=".xlsx,.xls">
       <div id="uploadStatus"></div>
     </section>
@@ -261,13 +261,13 @@
         <button class="tab-btn" data-group="ladies" id="tabLadies">Ladies</button>
       </div>
       <div class="search-export">
-        <input type="text" id="searchBox" placeholder="Search by name or locker number…">
+        <input type="text" id="searchBox" placeholder="Search by name, clock number, or locker number…">
         <button class="btn-secondary" id="exportBtn">⬇ Export to Excel</button>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Locker</th><th>Bank</th><th>Assigned To</th><th>Status</th></tr>
+            <tr><th>Locker</th><th>Bank</th><th>Index</th><th>Clock No</th><th>Assigned To</th><th>Status</th></tr>
           </thead>
           <tbody id="resultsBody"></tbody>
         </table>
@@ -327,32 +327,64 @@
   var LADIES_RE = /\b(ladies|women|female|girls)\b/i;
   var GENTS_RE  = /\b(men|gents|gentlemen|male|boys)\b/i;
   var HEADER_WORDS = /^(name|names|employee|employee name|staff|full name|surname|id|men|ladies|gents|women)$/i;
+  var NAME_HEADER_RE = /\b(name|surname|employee|staff|member)\b/i;
+  var CLOCK_HEADER_RE = /clock/i;
+  var INDEX_HEADER_RE = /index/i;
 
   function guessSheet(names, re){
     for (var i=0;i<names.length;i++){ if (re.test(names[i])) return names[i]; }
     return null;
   }
 
-  function extractNames(sheet){
+  function cellText(row, col){
+    if (col === -1 || row[col] === undefined || row[col] === null) return '';
+    return String(row[col]).trim();
+  }
+
+  // Reads a Men/Ladies tab into {index, clockNumber, name} records. Looks for
+  // Name/Index/Clock Number header columns first (any order); falls back to
+  // guessing a single name column for older, header-less lists.
+  function parsePeopleSheet(sheet){
     var rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
     if (!rows.length) return [];
-    // find the column (within first 5) with the most non-empty text values
-    var colCount = Math.max.apply(null, rows.map(function(r){return r.length;}).concat([1]));
-    var maxCols = Math.min(colCount, 5);
-    var bestCol = 0, bestScore = -1;
-    for (var c=0;c<maxCols;c++){
-      var score = 0;
-      for (var r=0;r<rows.length;r++){
-        var v = rows[r][c];
-        if (typeof v === 'string' && v.trim() !== '') score++;
-        else if (typeof v === 'number') score++;
-      }
-      if (score > bestScore){ bestScore = score; bestCol = c; }
+
+    var header = rows[0].map(function(h){ return String(h).trim(); });
+    var nameCol = -1, clockCol = -1, indexCol = -1;
+    for (var c=0;c<header.length;c++){
+      var h = header[c];
+      if (nameCol === -1 && NAME_HEADER_RE.test(h)) nameCol = c;
+      if (clockCol === -1 && CLOCK_HEADER_RE.test(h)) clockCol = c;
+      if (indexCol === -1 && INDEX_HEADER_RE.test(h)) indexCol = c;
     }
-    var values = rows.map(function(r){ return (r[bestCol] === undefined || r[bestCol] === null) ? '' : String(r[bestCol]).trim(); })
-                      .filter(function(v){ return v !== ''; });
-    if (values.length && HEADER_WORDS.test(values[0])) values.shift();
-    return values;
+
+    if (nameCol === -1){
+      // legacy fallback: no recognizable header row, guess the column with the most text
+      var colCount = Math.max.apply(null, rows.map(function(r){return r.length;}).concat([1]));
+      var maxCols = Math.min(colCount, 5);
+      var bestCol = 0, bestScore = -1;
+      for (var cc=0; cc<maxCols; cc++){
+        var score = 0;
+        for (var r=0;r<rows.length;r++){
+          var v = rows[r][cc];
+          if (typeof v === 'string' && v.trim() !== '') score++;
+          else if (typeof v === 'number') score++;
+        }
+        if (score > bestScore){ bestScore = score; bestCol = cc; }
+      }
+      var values = rows.map(function(r){ return cellText(r, bestCol); }).filter(function(v){ return v !== ''; });
+      if (values.length && HEADER_WORDS.test(values[0])) values.shift();
+      return values.map(function(name, i){ return {index: String(i+1), clockNumber:'', name:name}; });
+    }
+
+    var people = [];
+    for (var r=1; r<rows.length; r++){
+      var name = cellText(rows[r], nameCol);
+      if (!name) continue;
+      var clockNumber = cellText(rows[r], clockCol);
+      var indexVal = cellText(rows[r], indexCol) || String(people.length+1);
+      people.push({index: indexVal, clockNumber: clockNumber, name: name});
+    }
+    return people;
   }
 
   function populateSheetSelects(){
@@ -417,16 +449,16 @@
         var offset = (bank-1)*bankSize + (slot-1);
         var lockerNumber = startNumber + offset;
         var isReservedSlot = reserveFourth && slot === bankSize;
-        var name = null;
+        var person = null;
         if (!isReservedSlot && personIndex < shuffled.length){
-          name = shuffled[personIndex++];
+          person = shuffled[personIndex++];
         }
         lockers.push({
           bank: bank,
           slot: slot,
           lockerId: prefix + lockerNumber,
-          name: name,
-          status: name ? 'Assigned' : (isReservedSlot ? 'Unassigned (reserved)' : 'Unassigned (spare)')
+          person: person,
+          status: person ? 'Assigned' : (isReservedSlot ? 'Unassigned (reserved)' : 'Unassigned (spare)')
         });
       }
     }
@@ -437,18 +469,18 @@
   function computeResults(){
     var gentsSheet = workbook.Sheets[gentsSheetSelect.value];
     var ladiesSheet = workbook.Sheets[ladiesSheetSelect.value];
-    var gentsNames = extractNames(gentsSheet);
-    var ladiesNames = extractNames(ladiesSheet);
+    var gentsPeople = parsePeopleSheet(gentsSheet);
+    var ladiesPeople = parsePeopleSheet(ladiesSheet);
     var reserveFourth = reserveFourthToggle.checked;
 
     drawResults.gents = buildLockerPlan(
-      gentsNames,
+      gentsPeople,
       document.getElementById('gentsPrefix').value.trim(),
       parseInt(document.getElementById('gentsStart').value, 10) || 1,
       reserveFourth
     );
     drawResults.ladies = buildLockerPlan(
-      ladiesNames,
+      ladiesPeople,
       document.getElementById('ladiesPrefix').value.trim(),
       parseInt(document.getElementById('ladiesStart').value, 10) || 1,
       reserveFourth
@@ -466,9 +498,8 @@
       return;
     }
 
-    var pool = document.getElementById('gentsSheetSelect').value ? [] : [];
-    var allNamesPool = drawResults.gents.map(function(l){return l.name;})
-      .concat(drawResults.ladies.map(function(l){return l.name;}))
+    var allNamesPool = drawResults.gents.map(function(l){return l.person && l.person.name;})
+      .concat(drawResults.ladies.map(function(l){return l.person && l.person.name;}))
       .filter(Boolean);
     if (!allNamesPool.length) allNamesPool = ['…'];
 
@@ -519,10 +550,10 @@
     var g = drawResults.gents, l = drawResults.ladies;
     function count(list, pred){ return list.filter(pred).length; }
     var stats = [
-      {num: count(g,function(x){return x.name;}), lbl:'Gents assigned'},
-      {num: count(g,function(x){return !x.name;}), lbl:'Gents lockers free'},
-      {num: count(l,function(x){return x.name;}), lbl:'Ladies assigned'},
-      {num: count(l,function(x){return !x.name;}), lbl:'Ladies lockers free'}
+      {num: count(g,function(x){return x.person;}), lbl:'Gents assigned'},
+      {num: count(g,function(x){return !x.person;}), lbl:'Gents lockers free'},
+      {num: count(l,function(x){return x.person;}), lbl:'Ladies assigned'},
+      {num: count(l,function(x){return !x.person;}), lbl:'Ladies lockers free'}
     ];
     statsRow.innerHTML = stats.map(function(s){
       return '<div class="stat"><div class="num">'+s.num+'</div><div class="lbl">'+s.lbl+'</div></div>';
@@ -535,21 +566,26 @@
     var q = searchBox.value.trim().toLowerCase();
     if (q){
       list = list.filter(function(l){
-        return (l.name && l.name.toLowerCase().indexOf(q) !== -1) ||
-               l.lockerId.toLowerCase().indexOf(q) !== -1;
+        var p = l.person;
+        return l.lockerId.toLowerCase().indexOf(q) !== -1 ||
+               (p && p.name.toLowerCase().indexOf(q) !== -1) ||
+               (p && p.clockNumber && p.clockNumber.toLowerCase().indexOf(q) !== -1) ||
+               (p && p.index && String(p.index).toLowerCase().indexOf(q) !== -1);
       });
     }
-    var rows = list.map(function(l, idx){
+    var rows = list.map(function(l){
       var isBankStart = l.slot === 1;
-      var reserved = !l.name;
+      var reserved = !l.person;
       return '<tr class="'+(isBankStart?'bank-start ':'')+(reserved?'reserved':'')+'">' +
         '<td>'+l.lockerId+'</td>' +
         '<td>Bank '+l.bank+'</td>' +
-        '<td>'+(l.name || '—')+'</td>' +
+        '<td>'+(l.person ? l.person.index : '—')+'</td>' +
+        '<td>'+(l.person && l.person.clockNumber ? l.person.clockNumber : '—')+'</td>' +
+        '<td>'+(l.person ? l.person.name : '—')+'</td>' +
         '<td>'+l.status+'</td>' +
       '</tr>';
     }).join('');
-    resultsBody.innerHTML = rows || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">No results to show.</td></tr>';
+    resultsBody.innerHTML = rows || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">No results to show.</td></tr>';
   }
 
   // ---------- export ----------
@@ -565,7 +601,9 @@
         return {
           'Locker': l.lockerId,
           'Bank': l.bank,
-          'Assigned To': l.name || 'UNASSIGNED',
+          'Index': l.person ? l.person.index : '',
+          'Clock No': l.person ? l.person.clockNumber : '',
+          'Assigned To': l.person ? l.person.name : 'UNASSIGNED',
           'Status': l.status
         };
       });
@@ -578,10 +616,10 @@
 
     var summary = [
       {Metric:'Draw date', Value: new Date().toLocaleString()},
-      {Metric:'Gents assigned', Value: drawResults.gents.filter(function(x){return x.name;}).length},
-      {Metric:'Gents lockers free', Value: drawResults.gents.filter(function(x){return !x.name;}).length},
-      {Metric:'Ladies assigned', Value: drawResults.ladies.filter(function(x){return x.name;}).length},
-      {Metric:'Ladies lockers free', Value: drawResults.ladies.filter(function(x){return !x.name;}).length},
+      {Metric:'Gents assigned', Value: drawResults.gents.filter(function(x){return x.person;}).length},
+      {Metric:'Gents lockers free', Value: drawResults.gents.filter(function(x){return !x.person;}).length},
+      {Metric:'Ladies assigned', Value: drawResults.ladies.filter(function(x){return x.person;}).length},
+      {Metric:'Ladies lockers free', Value: drawResults.ladies.filter(function(x){return !x.person;}).length},
       {Metric:'4th-locker reserved rule', Value: reserveFourthToggle.checked ? 'On' : 'Off'}
     ];
     var wsSummary = XLSX.utils.json_to_sheet(summary);
