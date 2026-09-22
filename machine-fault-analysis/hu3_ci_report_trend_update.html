@@ -1,0 +1,403 @@
+<title>HU3 Continuous Improvement Report — Trend Update (Sep 2026)</title>
+<style>
+.viz-root {
+  color-scheme: light;
+  --surface-1:      #fcfcfb;
+  --surface-2:      #f9f9f7;
+  --text-primary:   #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted:     #898781;
+  --grid:           #e1e0d9;
+  --baseline:       #c3c2b7;
+  --border:         rgba(11,11,11,0.10);
+  --seq:            #2a78d6;
+  --seq-light:      #cde2fb;
+  --accent:         #eb6834;
+  --gray-1:         #b7b6ae;
+  --gray-2:         #cac9c2;
+  --gray-3:         #dddcd6;
+  --gray-4:         #efeeea;
+  --good:           #0ca30c;
+  --critical:       #d03b3b;
+  --card-bg:        #fcfcfb;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .viz-root {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --surface-2:      #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --grid:           #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --seq:            #3987e5;
+    --seq-light:      #184f95;
+    --accent:         #d95926;
+    --gray-1:         #5a5952;
+    --gray-2:         #454440;
+    --gray-3:         #35342f;
+    --gray-4:         #262622;
+    --good:           #0ca30c;
+    --critical:       #e66767;
+    --card-bg:        #1a1a19;
+  }
+}
+:root[data-theme="dark"] .viz-root {
+  color-scheme: dark;
+  --surface-1:      #1a1a19;
+  --surface-2:      #0d0d0d;
+  --text-primary:   #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted:     #898781;
+  --grid:           #2c2c2a;
+  --baseline:       #383835;
+  --border:         rgba(255,255,255,0.10);
+  --seq:            #3987e5;
+  --seq-light:      #184f95;
+  --accent:         #d95926;
+  --gray-1:         #5a5952;
+  --gray-2:         #454440;
+  --gray-3:         #35342f;
+  --gray-4:         #262622;
+  --good:           #0ca30c;
+  --critical:       #e66767;
+  --card-bg:        #1a1a19;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body.viz-root {
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 24px;
+  max-width: 1080px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+h1 { font-size: 22px; margin: 0 0 6px; }
+h2 { font-size: 17px; margin: 0 0 4px; }
+h3 { font-size: 14px; margin: 0 0 4px; }
+.subtitle { color: var(--text-secondary); font-size: 13.5px; margin: 0 0 22px; max-width: 820px; }
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+.hero-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin: 18px 0 4px; }
+@media (max-width: 820px) { .hero-stats { grid-template-columns: repeat(2,1fr); } }
+.stat { }
+.stat .label { font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px; }
+.stat .value { font-size: 24px; font-weight: 700; }
+.stat .sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.stat .value.accent { color: var(--accent); }
+.stat .value.good { color: var(--seq); }
+.stat .value.critical { color: var(--critical); }
+
+p.body-text { font-size: 13.5px; margin: 0 0 12px; }
+p.body-text:last-child { margin-bottom: 0; }
+.callout {
+  font-size: 12.5px; color: var(--text-secondary); background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 14px; margin-top: 12px;
+}
+.callout strong { color: var(--text-primary); }
+.callout.win { border-color: rgba(12,163,12,0.35); }
+.callout.watch { border-color: rgba(208,59,59,0.35); }
+
+.legend-line { display: flex; gap: 14px; font-size: 11px; color: var(--text-secondary); margin: 10px 0 0; flex-wrap: wrap; }
+.legend-line .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+.bar-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+.bar-label { font-size: 12px; width: 320px; flex: 0 0 320px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { flex: 1; height: 20px; position: relative; }
+.bar-fill { height: 20px; border-radius: 4px; min-width: 2px; }
+.bar-value { font-size: 11.5px; color: var(--text-secondary); flex: 0 0 auto; min-width: 100px; font-variant-numeric: tabular-nums; }
+
+.action-plan { display: flex; flex-direction: column; gap: 14px; }
+.action { display: flex; gap: 14px; border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.action .num {
+  flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--seq); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;
+}
+.action.priority-1 .num { background: var(--accent); }
+.action-body { flex: 1; }
+.action-title { font-size: 13.5px; font-weight: 700; margin-bottom: 3px; }
+.action-tag {
+  display: inline-block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 2px 7px; border-radius: 999px; margin-left: 8px; background: var(--gray-4); color: var(--text-secondary);
+  vertical-align: middle;
+}
+.action-tag.quick { background: #dff2df; color: #0a5c0a; }
+.action-tag.project { background: #eef4fc; color: #184f95; }
+.action-tag.governance { background: #f5ecd9; color: #7a5a00; }
+.action-tag.watch { background: #fbdede; color: #8a1f1f; }
+@media (prefers-color-scheme: dark) {
+  .action-tag.quick { background: #0f2a0f; color: #6fd66f; }
+  .action-tag.project { background: #10233d; color: #7fb2ee; }
+  .action-tag.governance { background: #332a10; color: #e3c46a; }
+  .action-tag.watch { background: #3a1414; color: #f09a9a; }
+}
+.action-desc { font-size: 12.5px; color: var(--text-secondary); margin-bottom: 6px; }
+.action-impact { font-size: 11.5px; color: var(--text-muted); }
+.action-impact strong { color: var(--text-primary); }
+
+.methodology-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+.methodology-table th, .methodology-table td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+.methodology-table th { color: var(--text-secondary); font-weight: 600; }
+.verdict-improving { color: var(--good); font-weight: 600; }
+.verdict-worsening { color: var(--critical); font-weight: 600; }
+.verdict-stable { color: var(--text-muted); }
+
+nav.toc { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; margin-bottom: 4px; }
+nav.toc a { color: var(--seq); text-decoration: none; }
+nav.toc a:hover { text-decoration: underline; }
+</style>
+
+<body class="viz-root">
+  <h1>HU3 Continuous Improvement Report: Trend Update</h1>
+  <p class="subtitle">
+    HU3's fault log refreshed through Sep 15, 2026 — about two more months beyond the last report (which ended Jul
+    16). This update checks whether the earlier findings replicate, and whether things have gotten better, worse,
+    or stayed the same since. The first pass at that comparison found something worth catching before trusting it —
+    see "A confound worth flagging" below.
+  </p>
+  <nav class="toc">
+    <a href="#summary">Executive summary</a>
+    <a href="#confound">A confound worth flagging</a>
+    <a href="#trends">Trends &amp; watch-outs</a>
+    <a href="#hu3">Full-period breakdown</a>
+    <a href="#replication">Replication check</a>
+    <a href="#plan">10-point action plan</a>
+  </nav>
+
+  <div class="card" id="summary">
+    <h2>Executive summary</h2>
+    <p class="body-text">Across the full Mar 16 – Sep 15, 2026 window, HU3 logged <strong>18,900 stoppage episodes
+      totaling 1,361.3 hours</strong>, of which <strong>766.6 hours (56.3%) trace to a confirmed technical root
+      cause</strong> — essentially unchanged from the 55.5% reported in July. The true-first-fault correction from
+      the last report holds up perfectly on the new data: "main air valve pressure not present" is still the true
+      first fault in <strong>zero</strong> of 11,493 occurrences.</p>
+    <p class="body-text">A naive month-over-month comparison first suggested a dramatic, across-the-board
+      improvement — but that turned out to be mostly an artifact of two long stretches with no logged data at all
+      (most likely a planned shutdown), which made the recent period look far quieter than it really was per hour of
+      actual operation. Corrected for that, the honest picture is: <strong>one confirmed, durable win</strong>
+      (guard/interlock stoppages down 94%), <strong>most causes essentially flat</strong>, and <strong>eight
+      statistically real watch-outs</strong> — most notably a fast-growing vacuum counter-plate sensing issue and a
+      new stroke-limiter fault that was negligible in the spring and is now a recurring problem.</p>
+    <div class="hero-stats">
+      <div class="stat"><div class="label">Confirmed technical downtime</div><div class="value">766.6 hrs</div><div class="sub">56.3% of 1,361.3 hrs total, 18,900 episodes</div></div>
+      <div class="stat"><div class="label">Durable win</div><div class="value good">−94%</div><div class="sub">guard/interlock stoppage rate, corrected for exposure</div></div>
+      <div class="stat"><div class="label">Overall technical-failure rate</div><div class="value critical">+8%</div><div class="sub">per hour of logged activity — a mild regression, not an improvement</div></div>
+      <div class="stat"><div class="label">Statistically real watch-outs</div><div class="value accent">8</div><div class="sub">led by vacuum counter-plate sensing, up 3–5×</div></div>
+    </div>
+  </div>
+
+  <div class="card" id="confound">
+    <h2>A confound worth flagging: why the first comparison was misleading</h2>
+    <p class="body-text">The obvious way to check for a trend is: count events per calendar day in the old period,
+      count events per calendar day in the new period, compare. Doing that here made it look like almost
+      everything had improved dramatically. But two enormous gaps in the log — <strong>474 hours (19.75 days)
+      starting Aug 27, and 376 hours (15.6 days) starting Sep 12</strong> — meant roughly 850 of the ~1,478 hours in
+      the "recent" window have no logged rows at all, most likely because the line wasn't running (a planned
+      shutdown or changeover). Counting those silent hours as normal calendar time makes every rate look artificially
+      low, because the denominator includes hours where nothing could possibly have happened.</p>
+    <div class="callout">
+      <strong>The fix, in plain English:</strong> instead of "events per calendar day," this report uses "events per
+      hour the machine was actually logged as running or stopped" — i.e., hours we know something was really
+      happening, gaps excluded. Once that's corrected, the two periods turn out to have been about equally busy per
+      hour of real activity (46.0% of logged time down in the baseline period vs. 48.0% in the recent one) — so the
+      dramatic "improvement" mostly disappears, and a more honest, smaller set of real changes remains.
+    </div>
+    <table class="methodology-table" style="margin-top:14px;">
+      <thead><tr><th></th><th class="num">Calendar span</th><th class="num">Actually logged (run+down)</th><th class="num">Down, as % of logged time</th></tr></thead>
+      <tbody>
+        <tr><td>Baseline (Mar 16 – Jul 16)</td><td class="num">121.5 days</td><td class="num">2,399.4 hrs</td><td class="num">54.0%</td></tr>
+        <tr><td>Recent (Jul 16 – Sep 15)</td><td class="num">61.6 days</td><td class="num">584.7 hrs</td><td class="num">52.0%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" id="trends">
+    <h2>Trends &amp; watch-outs (exposure-corrected)</h2>
+    <p class="body-text">Every comparison below uses an exact binomial test: given how a cause's total occurrences
+      split between the baseline and recent periods, is the recent share different from what the recent period's
+      share of total logged activity (19.6%) would predict on its own? Tested across 61 causes with at least 15
+      total occurrences, using a Bonferroni-corrected bar so "significant" here really means something.</p>
+
+    <div class="callout win">
+      <strong>The confirmed win.</strong> Guard/door interlock and stop-button stoppages fell from 8.49 to 0.49 per
+      24 logged-hours — a 94% drop that stays enormous even after the exposure correction (p = 7.8×10⁻⁶³). This is
+      real. Worth documenting exactly what changed operationally around this so it can be repeated elsewhere.
+    </div>
+
+    <h3 style="margin-top:20px;">By category</h3>
+    <table class="methodology-table">
+      <thead><tr><th>Category</th><th class="num">Baseline rate</th><th class="num">Recent rate</th><th class="num">Change</th><th>Verdict</th></tr></thead>
+      <tbody id="category-trend-table"></tbody>
+    </table>
+    <p class="body-text" style="font-size:11.5px; color:var(--text-muted); margin-top:6px;">Rate = episodes per 24 hours of logged (running + stopped) activity.</p>
+
+    <h3 style="margin-top:20px;">Top confirmed technical causes, by volume</h3>
+    <table class="methodology-table">
+      <thead><tr><th>Cause</th><th class="num">Baseline rate</th><th class="num">Recent rate</th><th class="num">Change</th><th>Verdict</th></tr></thead>
+      <tbody id="top-cause-trend-table"></tbody>
+    </table>
+
+    <div class="callout watch" style="margin-top:16px;">
+      <strong>The real watch-outs.</strong> Eight causes changed by more than chance would explain, all in the wrong
+      direction. Two are almost certainly the same underlying problem: "Vacuum counter plate A not present" and
+      "Vacuum counter plate B not present" — paired sensors on the same mechanism — are both up 3–5×. Also new: "Limit
+      switch fault Stroke limiter sealing head A + B activated" was 9 events in four months and is now running at a
+      rate 23× higher — negligible in spring, a real recurring issue now.
+    </div>
+    <table class="methodology-table">
+      <thead><tr><th>Cause</th><th class="num">Baseline rate</th><th class="num">Recent rate</th><th class="num">Change</th><th class="num">p-value</th></tr></thead>
+      <tbody id="watchout-table"></tbody>
+    </table>
+  </div>
+
+  <div class="card" id="hu3">
+    <h2>Full-period breakdown (Mar 16 – Sep 15, 2026)</h2>
+    <p class="body-text">Same classification as before — every stoppage episode scored by its true first fault,
+      using the <code>Warning_</code>/<code>Alarm_</code>/<code>Fault_</code> severity tag plus content overrides.
+      Only "Technical Failure" belongs in a reliability Pareto.</p>
+    <div id="master-cat-chart"></div>
+    <div class="legend-line" id="master-cat-legend"></div>
+    <h3 style="margin-top:22px;">Cleaned Pareto — confirmed technical root causes, whole period</h3>
+    <div id="master-clean-chart"></div>
+  </div>
+
+  <div class="card" id="replication">
+    <h2>Replication check: does the July correction hold up?</h2>
+    <p class="body-text">Two more months of independent data is a genuine out-of-sample check on the last report's
+      central claim — that "main air valve pressure not present" is a byproduct of extended downtime, not a real
+      trigger. It replicates almost exactly.</p>
+    <div class="hero-stats">
+      <div class="stat"><div class="label">Air valve as true root cause</div><div class="value good">0 of 11,493</div><div class="sub">was 0 of 9,525 in the July report</div></div>
+      <div class="stat"><div class="label">Episodes with cascade, median</div><div class="value">129.7s</div><div class="sub">vs. 37.1s without (was 129.2s vs. 36.1s)</div></div>
+      <div class="stat"><div class="label">Duration ↔ cascade-count</div><div class="value">ρ = 0.515</div><div class="sub">Spearman (was ρ = 0.507)</div></div>
+      <div class="stat"><div class="label">Category Kruskal-Wallis</div><div class="value">H = 583.4</div><div class="sub">p = 7.6×10⁻¹²⁴ (was H = 583.6, p = 7.2×10⁻¹²⁴)</div></div>
+    </div>
+    <p class="body-text">Every one of these numbers is within noise of the original — the same conclusion, on data
+      the first analysis never saw. That's a stronger form of validation than re-running the same test on the same
+      data: the mechanism proposed in July keeps predicting correctly two months later.</p>
+  </div>
+
+  <div class="card" id="plan">
+    <h2>10-point action plan (updated)</h2>
+    <p class="body-text" style="margin-bottom:16px;">Re-prioritized for what the corrected trend data actually
+      supports. Tags: <span class="action-tag quick">quick win</span> days-to-weeks, no capital;
+      <span class="action-tag project">engineering project</span> needs investigation/capital;
+      <span class="action-tag governance">governance</span> process/data fix;
+      <span class="action-tag watch">new watch-out</span> emerged since the last report.</p>
+    <div class="action-plan" id="action-plan"></div>
+  </div>
+
+<script id="data-blob" type="application/json">{"master_categories": [{"label": "Technical Failure", "hrs": 766.6, "pct": 56.3157774002111}, {"label": "Advisory / Maintenance Notice", "hrs": 264.3, "pct": 19.41201458455225}, {"label": "Operator / Safety Interlock", "hrs": 147.5, "pct": 10.836093560879844}, {"label": "Operator / Procedural", "hrs": 90.1, "pct": 6.615950669089347}, {"label": "Advisory / Pre-Warning", "hrs": 52.2, "pct": 3.8374230814467807}, {"label": "Advisory / Warning (uncategorized)", "hrs": 40.6, "pct": 2.982740703820686}], "master_clean": [{"label": "End of reel", "count": 885, "hrs": 124.2}, {"label": "Bad parts box is full, please empty!", "count": 911, "hrs": 98.2}, {"label": "Valve in pickup position # not present", "count": 2618, "hrs": 76.0}, {"label": "Limit switch fault Fork # in working position", "count": 1794, "hrs": 71.3}, {"label": "Vacuum splice module not present", "count": 619, "hrs": 30.1}, {"label": "Web torn", "count": 572, "hrs": 28.9}, {"label": "All rolls empty - Please refill!", "count": 228, "hrs": 26.9}, {"label": "MSM-Main: At least one station takes longer than the set cycle time allows", "count": 439, "hrs": 24.3}, {"label": "General error", "count": 471, "hrs": 20.2}, {"label": "Punch waste B not exhausted", "count": 211, "hrs": 15.5}, {"label": "Valve right inserted but not found - Check for valve on web", "count": 446, "hrs": 11.6}, {"label": "Error Cylinder switch", "count": 207, "hrs": 11.1}, {"label": "Vacuum counter plate B not present", "count": 267, "hrs": 10.9}, {"label": "Hot printer A not ready for operation", "count": 65, "hrs": 9.7}, {"label": "Flow monitor flow rate not OK", "count": 341, "hrs": 8.5}, {"label": "Other (110 lower-frequency technical fault families)", "count": 4656, "hrs": 199.3}], "category_trend": [{"category": "Technical Failure", "n_base": 11660, "n_recent": 3070, "rate_base": 116.63, "rate_recent": 126.02, "pct_change": 8, "p_value": 0.0001512717310813651, "verdict": "Worsening"}, {"category": "Advisory / Pre-Warning", "n_base": 351, "n_recent": 83, "rate_base": 3.51, "rate_recent": 3.41, "pct_change": -3, "p_value": 0.8560862132102371, "verdict": "No significant change"}, {"category": "Advisory / Maintenance Notice", "n_base": 1487, "n_recent": 476, "rate_base": 14.87, "rate_recent": 19.54, "pct_change": 31, "p_value": 4.026317957047041e-07, "verdict": "Worsening"}, {"category": "Operator / Safety Interlock", "n_base": 849, "n_recent": 12, "rate_base": 8.49, "rate_recent": 0.49, "pct_change": -94, "p_value": 7.760368881490761e-63, "verdict": "Improving"}, {"category": "Operator / Procedural", "n_base": 219, "n_recent": 75, "rate_base": 2.19, "rate_recent": 3.08, "pct_change": 41, "p_value": 0.012417833231089376, "verdict": "No significant change"}, {"category": "Advisory / Warning (uncategorized)", "n_base": 506, "n_recent": 112, "rate_base": 5.06, "rate_recent": 4.6, "pct_change": -9, "p_value": 0.38888875882968954, "verdict": "No significant change"}], "top_cause_trend": [{"family": "Valve in pickup position # not present", "rate_base": 21.255020563780903, "rate_recent": 20.237720859721044, "pct_change": -5, "verdict": "No significant change"}, {"family": "Limit switch fault Fork # in working position", "rate_base": 14.533432884317012, "rate_recent": 13.99809901250482, "pct_change": -4, "verdict": "No significant change"}, {"family": "Bad parts box is full, please empty!", "rate_base": 6.951642019683636, "rate_recent": 8.866831046044108, "pct_change": 28, "verdict": "No significant change"}, {"family": "End of reel", "rate_base": 7.151689272048634, "rate_recent": 6.978524434386567, "pct_change": -2, "verdict": "No significant change"}, {"family": "Vacuum splice module not present", "rate_base": 4.6010868043949245, "rate_recent": 6.526972853338025, "pct_change": 42, "verdict": "Worsening"}, {"family": "Web torn", "rate_base": 4.551074991303675, "rate_recent": 4.802866816607226, "pct_change": 6, "verdict": "No significant change"}, {"family": "General error", "rate_base": 3.2507678509311964, "rate_recent": 5.993320984826111, "pct_change": 84, "verdict": "Worsening"}, {"family": "Valve right inserted but not found - Check for valve on web", "rate_base": 3.790895432316688, "rate_recent": 2.7503596300229414, "pct_change": -27, "verdict": "No significant change"}, {"family": "MSM-Main: At least one station takes longer than maximum allowed", "rate_base": 3.4508151032961933, "rate_recent": 3.858713510778455, "pct_change": 12, "verdict": "No significant change"}, {"family": "MSM-Main: At least one station takes longer than the set cycle time allows", "rate_base": 3.4608174659144435, "rate_recent": 3.817663367046769, "pct_change": 10, "verdict": "No significant change"}, {"family": "Flow monitor flow rate not OK", "rate_base": 2.990706422856701, "rate_recent": 1.7241060367307988, "pct_change": -42, "verdict": "Improving"}, {"family": "Valve right out of area - Check for valve on web", "rate_base": 2.240529226487963, "rate_recent": 4.063964229436883, "pct_change": 81, "verdict": "Worsening"}, {"family": "Last splice has not been detected", "rate_base": 2.5606048302719584, "rate_recent": 2.421958480169456, "pct_change": -5, "verdict": "No significant change"}, {"family": "Vacuum counter plate B not present", "rate_base": 1.160274063716981, "rate_recent": 6.198571703484539, "pct_change": 434, "verdict": "Worsening"}, {"family": "All rolls empty - Please refill!", "rate_base": 1.900448897467469, "rate_recent": 1.559905461804056, "pct_change": -18, "verdict": "No significant change"}], "watchouts": [{"family": "Limit switch fault Stroke limiter sealing head A + B activated", "rate_base": 0.0900212635642485, "rate_recent": 2.0525071865842843, "ratio": 22.800248578152893, "p_value": 7.41510598106668e-27}, {"family": "Vacuum counter plate B not present", "rate_base": 1.160274063716981, "rate_recent": 6.198571703484539, "ratio": 5.342334106501687, "p_value": 1.8894830260871955e-40}, {"family": "Vacuum counter plate A not present", "rate_base": 0.5201228561489915, "rate_recent": 2.1756576177793416, "ratio": 4.182968681453436, "p_value": 1.4692660721750944e-12}, {"family": "Consecutive fault side A", "rate_base": 1.2803024151359792, "rate_recent": 2.8324599174863128, "ratio": 2.212336619848898, "p_value": 3.5656904111357e-07}, {"family": "Error Cylinder switch", "rate_base": 1.4103331291732268, "rate_recent": 2.7093094862912555, "ratio": 1.9210422206273503, "p_value": 3.1945906523560394e-05}, {"family": "General error", "rate_base": 3.2507678509311964, "rate_recent": 5.993320984826111, "ratio": 1.8436631773349483, "p_value": 4.72109838751729e-09}, {"family": "Valve right out of area - Check for valve on web", "rate_base": 2.240529226487963, "rate_recent": 4.063964229436883, "ratio": 1.8138412038512703, "p_value": 2.208126047652293e-06}, {"family": "Vacuum splice module not present", "rate_base": 4.6010868043949245, "rate_recent": 6.526972853338025, "ratio": 1.418571987623339, "p_value": 0.0002123165567714}], "action_plan": [{"title": "Investigate the vacuum counter-plate sensing degradation (A + B)", "tag": "New watch-out", "tagClass": "watch", "desc": "\"Vacuum counter plate A not present\" and \"...B not present\" \u2014 paired sensors on the same mechanism \u2014 are both up sharply (4.2x and 5.3x their spring rate, p < 1e-11 for both). Moving together this strongly points to one shared root cause: check vacuum supply pressure, seals, and the counter-plate mounting on both sides before treating them as two separate problems.", "impact": "Combined rate up ~4-5x; the two largest statistically-confirmed deteriorations in the whole dataset"}, {"title": "Root-cause the new stroke-limiter sealing-head fault", "tag": "New watch-out", "tagClass": "watch", "desc": "\"Limit switch fault Stroke limiter sealing head A + B activated\" was 9 events across four spring months (essentially noise) and is now running at 23x that rate (p = 7.4e-27) \u2014 a new, real, recurring issue, not a fluke. Catch it while it's still small: inspect the stroke-limiter mechanism and sealing-head alignment before it grows into a bigger downtime item.", "impact": "23x rate increase from a near-zero baseline \u2014 the fastest-growing issue found"}, {"title": "Review the cluster of correlated new faults (General error, Error Cylinder switch, Valve right out of area)", "tag": "Engineering project", "tagClass": "project", "desc": "Three more causes are each up 81-92% (p < 5e-5 for all three). None individually is huge, but three unrelated-looking faults moving the same direction at the same time is itself a signal \u2014 check for a shared cause: a firmware/config change, a component batch, or a maintenance event that lines up with when the recent period started.", "impact": "Three causes, each +81-92%, moving together"}, {"title": "Document and replicate what drove the 94% interlock improvement", "tag": "Quick win", "tagClass": "quick", "desc": "Guard/door interlock and stop-button stoppages fell from 8.49 to 0.49 per 24 logged-hours \u2014 the one confirmed, durable win in this update, robust even after correcting for the recent period's lower activity. Find out specifically what changed (a guarding redesign, a training push, a process change) and check whether the same fix applies to other HU-series machines or the packaging line's own guard/interlock problem.", "impact": "-94%, the largest confirmed improvement in either report \u2014 worth understanding and repeating"}, {"title": "Escalate the UPS-battery / \"SR Dependency list\" validation \u2014 it got worse, not better", "tag": "Governance", "tagClass": "governance", "desc": "This was flagged as unconfirmed in July (18.7% of all downtime, bigger than any single technical cause). It's now +31% (p = 4e-7) and still the second-largest category overall. The original recommendation \u2014 cross-check these episodes against maintenance/operations logs \u2014 hasn't happened yet or hasn't resolved it. Treat as higher priority this time, not the same priority.", "impact": "214+ hrs of downtime still unexplained and now trending the wrong way"}, {"title": "Re-open the four still-unresolved July action items \u2014 rates are flat, not improved", "tag": "Engineering project", "tagClass": "project", "desc": "Reel/roll material exhaustion, reject-box capacity, pickup-valve sensing, and fork-position limit switches \u2014 the top 4 causes by volume \u2014 all show NO statistically significant change since July (p > 0.3 for all four) once exposure is corrected. These are still the single largest source of confirmed technical downtime (238 of 766.6 hrs, 31%) and the fixes recommended in the last report don't appear to have measurably landed yet.", "impact": "238 hrs, 31% of all confirmed technical downtime \u2014 unchanged since the last review"}, {"title": "Confirm and document the two data gaps (Aug 27, Sep 12)", "tag": "Governance", "tagClass": "governance", "desc": "~850 hours (35 days) of the recent window has no logged rows at all, in two blocks. Confirm with operations whether this is a planned shutdown/changeover (most likely) or a historian/logging outage. If it's the latter, fix the logging pipeline \u2014 a repeat of this gap will quietly break every future trend comparison the same way it almost broke this one.", "impact": "850 hrs unaccounted for; directly caused the misleading first pass at this trend analysis"}, {"title": "Note the causes that genuinely did improve", "tag": "Quick win", "tagClass": "quick", "desc": "\"Flow monitor flow rate not OK\" (-42%), \"Valve left inserted but not found\" (-66%), and \"Limit switch fault Knife top extended\" (-87%) all show real, statistically-confirmed improvement. Worth a short note on what changed for these, if anything was deliberately done, so it isn't lost or accidentally undone.", "impact": "Three confirmed, smaller wins worth preserving"}, {"title": "Standardize exposure-corrected trending as the default method", "tag": "Governance", "tagClass": "governance", "desc": "Comparing raw counts per calendar day nearly produced a false \"everything improved\" conclusion here. Any future before/after comparison \u2014 on HU3, the packaging line, or elsewhere \u2014 should normalize by actual logged run+down hours, not calendar time, before drawing conclusions. Bake this into whatever template or process generates these reviews.", "impact": "Prevents the single largest analytical error found in this update from recurring"}, {"title": "Set numeric targets and a recurring review cadence", "tag": "Governance", "tagClass": "governance", "desc": "Four months passed between reports with no measurable progress on the top volume-driver causes. Set explicit targets for the top 4 unresolved items (e.g., -25% rate within 90 days) and review monthly rather than only when new data happens to be pulled, so stalled action items are caught in weeks, not months.", "impact": "Turns this from a one-off analysis into an ongoing improvement loop"}]}</script>
+<script>
+(function(){
+  "use strict";
+  const DATA = JSON.parse(document.getElementById('data-blob').textContent);
+  function fmtNum(n){ return Math.round(n).toLocaleString(); }
+  function fmtP(p){ if (p < 0.0001) return p.toExponential(2); return p.toFixed(4); }
+
+  function renderBars(containerId, rows){
+    const el = document.getElementById(containerId);
+    el.innerHTML = '';
+    const max = Math.max(1, ...rows.map(r => r.value));
+    for (const r of rows){
+      const row = document.createElement('div'); row.className = 'bar-row';
+      const pct = (r.value / max) * 100;
+      const label = document.createElement('div'); label.className = 'bar-label'; label.textContent = r.label; label.title = r.label;
+      const track = document.createElement('div'); track.className = 'bar-track';
+      const fill = document.createElement('div'); fill.className = 'bar-fill';
+      fill.style.width = Math.max(pct, 0.5) + '%'; fill.style.background = r.color || 'var(--seq)';
+      track.appendChild(fill);
+      const val = document.createElement('div'); val.className = 'bar-value'; val.textContent = r.valueLabel;
+      row.append(label, track, val); el.appendChild(row);
+    }
+  }
+  function renderLegend(containerId, items){
+    const el = document.getElementById(containerId); el.innerHTML = '';
+    for (const it of items){
+      const span = document.createElement('span');
+      const sw = document.createElement('span'); sw.className = 'sw'; sw.style.background = it.color;
+      span.appendChild(sw); span.appendChild(document.createTextNode(it.label)); el.appendChild(span);
+    }
+  }
+  function verdictClass(v){
+    if (v === 'Improving') return 'verdict-improving';
+    if (v === 'Worsening') return 'verdict-worsening';
+    return 'verdict-stable';
+  }
+
+  {
+    const cats = DATA.master_categories;
+    const rows = cats.map(c => ({ label: c.label, value: c.hrs, valueLabel: fmtNum(c.hrs) + ' hrs (' + c.pct.toFixed(1) + '%)',
+      color: c.label === 'Technical Failure' ? 'var(--seq)' : 'var(--gray-2)' }));
+    renderBars('master-cat-chart', rows);
+    renderLegend('master-cat-legend', [
+      {label:'Technical Failure (the real Pareto)', color:'var(--seq)'},
+      {label:'Everything else (noise buckets)', color:'var(--gray-2)'}
+    ]);
+  }
+  {
+    const rows = DATA.master_clean.map(c => ({ label: c.label, value: c.hrs, valueLabel: fmtNum(c.hrs) + ' hrs (' + fmtNum(c.count) + ' events)', color: 'var(--seq)' }));
+    renderBars('master-clean-chart', rows);
+  }
+
+  {
+    const tbody = document.getElementById('category-trend-table'); tbody.innerHTML = '';
+    for (const r of DATA.category_trend){
+      const tr = document.createElement('tr');
+      const c0 = document.createElement('td'); c0.textContent = r.category;
+      const c1 = document.createElement('td'); c1.className='num'; c1.textContent = r.rate_base.toFixed(2);
+      const c2 = document.createElement('td'); c2.className='num'; c2.textContent = r.rate_recent.toFixed(2);
+      const c3 = document.createElement('td'); c3.className='num'; c3.textContent = (r.pct_change>0?'+':'') + r.pct_change + '%';
+      const c4 = document.createElement('td'); c4.className = verdictClass(r.verdict); c4.textContent = r.verdict;
+      tr.append(c0,c1,c2,c3,c4); tbody.appendChild(tr);
+    }
+  }
+  {
+    const tbody = document.getElementById('top-cause-trend-table'); tbody.innerHTML = '';
+    for (const r of DATA.top_cause_trend){
+      const tr = document.createElement('tr');
+      const c0 = document.createElement('td'); c0.textContent = r.family;
+      const c1 = document.createElement('td'); c1.className='num'; c1.textContent = r.rate_base.toFixed(2);
+      const c2 = document.createElement('td'); c2.className='num'; c2.textContent = r.rate_recent.toFixed(2);
+      const c3 = document.createElement('td'); c3.className='num'; c3.textContent = (r.pct_change>0?'+':'') + r.pct_change + '%';
+      const c4 = document.createElement('td'); c4.className = verdictClass(r.verdict); c4.textContent = r.verdict;
+      tr.append(c0,c1,c2,c3,c4); tbody.appendChild(tr);
+    }
+  }
+  {
+    const tbody = document.getElementById('watchout-table'); tbody.innerHTML = '';
+    for (const r of DATA.watchouts){
+      const tr = document.createElement('tr');
+      const c0 = document.createElement('td'); c0.textContent = r.family;
+      const c1 = document.createElement('td'); c1.className='num'; c1.textContent = r.rate_base.toFixed(2);
+      const c2 = document.createElement('td'); c2.className='num'; c2.textContent = r.rate_recent.toFixed(2);
+      const c3 = document.createElement('td'); c3.className='num verdict-worsening'; c3.textContent = '+' + Math.round((r.ratio-1)*100) + '%';
+      const c4 = document.createElement('td'); c4.className='num'; c4.textContent = fmtP(r.p_value);
+      tr.append(c0,c1,c2,c3,c4); tbody.appendChild(tr);
+    }
+  }
+  {
+    const el = document.getElementById('action-plan'); el.innerHTML = '';
+    DATA.action_plan.forEach((a, i) => {
+      const card = document.createElement('div'); card.className = 'action' + (i === 0 ? ' priority-1' : '');
+      const num = document.createElement('div'); num.className = 'num'; num.textContent = (i+1);
+      const body = document.createElement('div'); body.className = 'action-body';
+      const title = document.createElement('div'); title.className = 'action-title'; title.textContent = a.title;
+      const tag = document.createElement('span'); tag.className = 'action-tag ' + a.tagClass; tag.textContent = a.tag;
+      title.appendChild(tag);
+      const desc = document.createElement('div'); desc.className = 'action-desc'; desc.textContent = a.desc;
+      const impact = document.createElement('div'); impact.className = 'action-impact'; impact.innerHTML = 'Impact: <strong>' + a.impact + '</strong>';
+      body.append(title, desc, impact); card.append(num, body); el.appendChild(card);
+    });
+  }
+})();
+</script>

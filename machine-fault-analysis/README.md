@@ -33,6 +33,11 @@ schubert") and **@Fault_0085** ("Schubert – downstream machine not ready").
   stoppage **episode**, not summed row-by-row. Rows logged later in the same
   episode (while still stopped) are cascade alarms, not independent causes —
   this matters because it turned out to matter a lot (see below).
+- **`hu3_ci_report_trend_update.html`** — follow-up to `hu3_ci_report.html`.
+  Refreshes HU3's fault log through Sep 15, 2026 (baseline: Mar 16–Jul 16;
+  recent: Jul 16–Sep 15) to check whether the true-first-fault correction
+  replicates on new data and whether things have actually improved since.
+  See "Headline finding from the HU3 trend update" below.
 
 ## Headline finding from the cleaned analysis (master/child)
 
@@ -60,6 +65,24 @@ a UPS-battery/"SR Dependency list" advisory as the logged trigger — flagged
 for validation rather than treated as confirmed. See `hu3_ci_report.html`
 for the full breakdown, the corrected 10-point action plan, and the
 methodology explanation.
+
+## Headline finding from the HU3 trend update
+
+Refreshing HU3's log through Sep 15, 2026 replicates the July correction
+almost exactly — "main air valve pressure not present" is still the true
+first fault in zero occurrences (0 of 11,493 this time). A naive
+events-per-calendar-day trend comparison first suggested a dramatic,
+across-the-board improvement, but that turned out to be mostly an artifact
+of two large logging gaps (~850 hours total, most likely a planned
+shutdown) that made the recent period look far quieter than it really was.
+Corrected for actual logged run+down hours: **one confirmed, durable win**
+(guard/interlock stoppages down 94%), **most causes — including the four
+biggest from the original action plan — statistically unchanged**, and
+**eight confirmed watch-outs**, led by a paired vacuum counter-plate
+sensing issue (up 4–5×) and a brand-new stroke-limiter fault (23× rate
+increase from a near-zero baseline). See `hu3_ci_report_trend_update.html`
+for the full trends table, the exposure-correction methodology in plain
+English, and the revised 10-point action plan.
 
 ## Statistical significance (added to `ci_report.html`)
 
