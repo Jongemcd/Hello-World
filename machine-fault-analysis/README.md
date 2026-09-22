@@ -73,8 +73,9 @@ almost exactly — "main air valve pressure not present" is still the true
 first fault in zero occurrences (0 of 11,493 this time). A naive
 events-per-calendar-day trend comparison first suggested a dramatic,
 across-the-board improvement, but that turned out to be mostly an artifact
-of two large logging gaps (~850 hours total, most likely a planned
-shutdown) that made the recent period look far quieter than it really was.
+of two large logging gaps (~850 hours total). A second, independent system
+(EPICOR MI — see below) confirms those gaps were a **logging outage, not a
+shutdown**: it shows normal fault activity throughout both of them.
 Corrected for actual logged run+down hours: **one confirmed, durable win**
 (guard/interlock stoppages down 94%), **most causes — including the four
 biggest from the original action plan — statistically unchanged**, and
@@ -83,6 +84,29 @@ sensing issue (up 4–5×) and a brand-new stroke-limiter fault (23× rate
 increase from a near-zero baseline). See `hu3_ci_report_trend_update.html`
 for the full trends table, the exposure-correction methodology in plain
 English, and the revised 10-point action plan.
+
+## Cross-system validation (added to `hu3_ci_report_trend_update.html`)
+
+Two more files arrived after the trend update — HU3's downtime events and
+hours from **EPICOR MI**, a separate plant system with its own 42-category
+reason taxonomy, logged as complete daily totals (no gaps) rather than a
+row-level change log. On the 44 days Ignition logs as completely silent —
+including both big August/September gaps — EPICOR shows 451.8 hours across
+6,149 downtime events: normal, continuous fault activity. Only one day
+(Jun 28) is genuinely quiet in both systems. This resolves the open
+question from the trend update: the gaps are a **confirmed Ignition
+logging defect**, not a planned shutdown, and every root-cause figure in
+that report is missing whatever really happened on those 44 days.
+
+EPICOR's own gap-free baseline-vs-recent comparison (needing no exposure
+correction, since it has no gaps) independently arrives at the same
+conclusion as the corrected Ignition analysis: its largest categories
+(Electrical +50%, Valve Feed +55%, General Fault +35%, No Subreason +33%)
+mostly got **worse**, not better — confirming "not broadly improving" from
+a completely different data source. EPICOR's "Safety" category also trends
+down, consistent in direction (though not magnitude — far fewer events,
+not statistically significant on its own) with Ignition's -94%
+guard/interlock finding.
 
 ## Statistical significance (added to `ci_report.html`)
 
