@@ -625,7 +625,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
   function updateStage(){
     var remaining = draw.prizes.length - draw.cursor;
     el.prizeRemaining.textContent = remaining>0
-      ? (remaining+' prize'+(remaining===1?'':'s')+' remaining · '+draw.pool.length+' participant'+(draw.pool.length===1?'':'s')+' in the general pool')
+      ? (draw.cursor+' drawn · '+remaining+' prize'+(remaining===1?'':'s')+' remaining · '+draw.pool.length+' participant'+(draw.pool.length===1?'':'s')+' left in the pool')
       : 'All prizes have been drawn 🎉';
     if(draw.cursor < draw.prizes.length){
       el.prizeCurrent.textContent = (draw.prizes[draw.cursor].high ? '⭐ ' : '🎁 ') + draw.prizes[draw.cursor].label;
