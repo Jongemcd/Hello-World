@@ -94,7 +94,10 @@
     border:1px solid var(--card-border);
   }
   .prize-remaining{color:var(--text-dim);font-size:.8rem;margin-bottom:6px;}
-  .prize-current{font-size:1.5rem;color:var(--gold);font-weight:700;margin:4px 0 18px;}
+  .prize-current{font-size:1.5rem;color:var(--gold);font-weight:700;margin:0 6px;white-space:nowrap;}
+  .draw-actions{justify-content:flex-start;align-items:center;margin-top:8px;}
+  .winner-block{text-align:center;}
+  .winner-prize{font-size:.6em;font-weight:700;color:var(--gold);-webkit-text-fill-color:var(--gold);margin-top:6px;animation:pop .45s ease;}
   .reveal-box{
     min-height:86px;display:flex;align-items:center;justify-content:center;
     font-size:1.8rem;font-weight:800;color:#fff;letter-spacing:.5px;
@@ -194,10 +197,10 @@
     <h2><span class="step-num">3</span> Run the draw</h2>
     <div class="stage">
       <div class="prize-remaining" id="prizeRemaining"></div>
-      <div class="prize-current" id="prizeCurrent">&nbsp;</div>
       <div class="reveal-box" id="revealBox">&nbsp;</div>
-      <div class="actions" style="justify-content:center;">
+      <div class="actions draw-actions">
         <button class="btn-primary" id="btnDrawNext">🎅 Draw next winner</button>
+        <div class="prize-current" id="prizeCurrent">&nbsp;</div>
         <button class="btn-ghost" id="btnRestart">Start over</button>
         <button class="btn-ghost" id="btnRepull" title="Only available before the first prize is drawn">🔄 Re-pull high winners</button>
       </div>
@@ -716,7 +719,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
 
     el.revealBox.classList.remove('spinning');
     var empHtml = winner.employeeId ? ' <span class="winner-emp">('+escapeHtml(winner.employeeId)+')</span>' : '';
-    el.revealBox.innerHTML = '<span class="winner-name">🎉 '+escapeHtml(winner.name)+empHtml+'</span>';
+    el.revealBox.innerHTML = '<div class="winner-block"><span class="winner-name">🎉 '+escapeHtml(winner.name)+empHtml+'</span><div class="winner-prize">'+(prize.high?'⭐ ':'🎁 ')+'won '+escapeHtml(prize.label)+'</div></div>';
     burstConfetti();
 
     draw.cursor++;
