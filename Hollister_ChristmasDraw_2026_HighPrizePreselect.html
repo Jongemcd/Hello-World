@@ -129,7 +129,6 @@
   .hidden-name{letter-spacing:3px;color:var(--text-dim);}
   .pending-row td:last-child{color:var(--text-dim);}
   .done-row td:last-child{color:#a9e8c1;}
-  .high-title{margin-top:22px !important;}
   footer{text-align:center;color:var(--text-dim);font-size:.75rem;margin-top:30px;}
 </style>
 </head>
@@ -214,12 +213,6 @@
         <thead><tr><th>Cheque #</th><th>Prize</th><th>Winner</th><th>Status</th></tr></thead>
         <tbody></tbody>
       </table>
-      <h2 class="high-title"><span class="step-num">🏆</span> High-prize winners &mdash; revealed</h2>
-      <table id="highRevealedTable">
-        <thead><tr><th>Cheque #</th><th>Prize</th><th>Winner</th><th>Employee</th></tr></thead>
-        <tbody></tbody>
-      </table>
-      <p class="muted" id="highRevealedEmpty">None revealed yet &mdash; names appear here as each high prize is drawn.</p>
     </div>
 
     <div id="resultsWrap" class="hidden" style="margin-top:22px;">
@@ -342,9 +335,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     highWrap: document.getElementById('highWrap'),
     showHigh: document.getElementById('showHigh'),
     highNote: document.getElementById('highNote'),
-    highPending: document.getElementById('highPendingTable').querySelector('tbody'),
-    highRevealed: document.getElementById('highRevealedTable').querySelector('tbody'),
-    highRevealedEmpty: document.getElementById('highRevealedEmpty')
+    highPending: document.getElementById('highPendingTable').querySelector('tbody')
   };
 
   // Unbiased random integer in [0,n) using the browser's crypto source when available.
@@ -529,7 +520,9 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
           var num = parseFloat(raw);
           order = isNaN(num) ? idx : num;
         }
-        prizes.push({name:name, order:order});
+        var chequeNo = idx + 1;
+        if(orderMode !== '__rowsorder__' && !isNaN(parseFloat(r[parseInt(orderMode,10)]))) chequeNo = parseFloat(r[parseInt(orderMode,10)]);
+        prizes.push({name:name, order:order, chequeNo:chequeNo});
       });
       prizes.sort(function(a,b){ return a.order - b.order; });
       var threshold = parseFloat(el.highThreshold.value);
@@ -606,10 +599,8 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     var idxs = Object.keys(draw.highMap).map(Number).sort(function(a,b){return a-b;});
     el.highWrap.classList.toggle('hidden', idxs.length === 0);
     var show = el.showHigh.checked;
-    el.highNote.textContent = idxs.length+' high prize'+(idxs.length===1?'':'s')+' pre-selected from all '+draw.allPeople.length+' participants. Names stay hidden until each prize is drawn in cheque order.';
+    el.highNote.textContent = idxs.length+' high prize'+(idxs.length===1?'':'s')+' pre-selected from all '+draw.allPeople.length+' participants. Names stay hidden until each prize is drawn in cheque order, then show here as revealed.';
     el.highPending.innerHTML = '';
-    el.highRevealed.innerHTML = '';
-    var revealedCount = 0;
     idxs.forEach(function(i){
       var p = draw.prizes[i], w = draw.highMap[i], done = !!draw.revealed[i];
       var nameCell = (done || show)
@@ -617,17 +608,9 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
         : '<span class="hidden-name">••••••••••</span>';
       var tr = document.createElement('tr');
       tr.className = done ? 'done-row' : 'pending-row';
-      tr.innerHTML = '<td>'+(i+1)+'</td><td>'+escapeHtml(p.label)+'</td><td>'+nameCell+'</td><td>'+(done?'✔ Revealed':'Pending')+'</td>';
+      tr.innerHTML = '<td>'+p.chequeNo+'</td><td>'+escapeHtml(p.label)+'</td><td>'+nameCell+'</td><td>'+(done?'✔ Revealed':'Pending')+'</td>';
       el.highPending.appendChild(tr);
-      if(done){
-        revealedCount++;
-        var tr2 = document.createElement('tr');
-        tr2.innerHTML = '<td>'+(i+1)+'</td><td>'+escapeHtml(p.label)+'</td><td>'+escapeHtml(w.name)+'</td><td>'+escapeHtml(w.employeeId||'')+'</td>';
-        el.highRevealed.appendChild(tr2);
-      }
     });
-    el.highRevealedEmpty.classList.toggle('hidden', revealedCount > 0);
-    el.highRevealed.parentNode.classList.toggle('hidden', revealedCount === 0);
   }
 
   el.showHigh.addEventListener('change', function(){ if(draw) renderHigh(); });
@@ -713,8 +696,8 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     } else {
       winner = draw.pool.splice(rnd(draw.pool.length),1)[0];
     }
-    draw.results.push({prize:prize.label, winner:winner.name, employeeId:winner.employeeId});
-    addResultRow(draw.cursor, (prize.high?'⭐ ':'')+prize.label, winner);
+    draw.results.push({index:prize.chequeNo, prize:prize.label, winner:winner.name, employeeId:winner.employeeId});
+    addResultRow(prize.chequeNo - 1, (prize.high?'⭐ ':'')+prize.label, winner);
     if(prize.high) renderHigh();
 
     el.revealBox.classList.remove('spinning');
@@ -745,9 +728,9 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
   });
 
   el.btnDownload.addEventListener('click', function(){
-    var lines = ['Prize,Winner,Employee'];
+    var lines = ['Index,Prize,Winner,Employee'];
     draw.results.forEach(function(r){
-      lines.push('"'+r.prize.replace(/"/g,'""')+'","'+r.winner.replace(/"/g,'""')+'","'+(r.employeeId||'').replace(/"/g,'""')+'"');
+      lines.push(r.index+',"'+r.prize.replace(/"/g,'""')+'","'+r.winner.replace(/"/g,'""')+'","'+(r.employeeId||'').replace(/"/g,'""')+'"');
     });
     var blob = new Blob(['\uFEFF' + lines.join('\r\n')], {type:'text/csv;charset=utf-8;'});
     var url = URL.createObjectURL(blob);
