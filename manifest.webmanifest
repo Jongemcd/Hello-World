@@ -1,0 +1,11 @@
+{
+  "name": "Retirement Compass",
+  "short_name": "Compass",
+  "description": "Track income and expenses, scan receipts, and see if your retirement savings will last.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f2f8",
+  "theme_color": "#5b2a9d",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

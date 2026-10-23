@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Retirement Compass</title>
+<meta name="description" content="Track income and expenses, scan receipts, and see if your retirement savings will last.">
+<meta name="theme-color" content="#5b2a9d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app">
+  <aside class="nav" aria-label="Main">
+    <div class="brand"><img src="icon.svg" alt="" width="28" height="28"><span>Retirement Compass</span></div>
+    <button data-tab="dashboard" class="active"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z"/></svg><span>Dashboard</span></button>
+    <button data-tab="transactions"><svg viewBox="0 0 24 24"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h12v2H3z"/></svg><span>Activity</span></button>
+    <button data-tab="plan"><svg viewBox="0 0 24 24"><path d="M12 2 2 7v2h20V7zM4 11v7H2v2h20v-2h-2v-7h-2v7h-3v-7h-2v7h-2v-7H9v7H6v-7z"/></svg><span>Plan</span></button>
+    <button data-tab="report"><svg viewBox="0 0 24 24"><path d="M3 3v18h18v-2H5V3zm4 10h3v5H7zm5-6h3v11h-3zm5 3h3v8h-3z"/></svg><span>Report</span></button>
+    <button data-tab="settings"><svg viewBox="0 0 24 24"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1L11 21h4l.4-2.9c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg><span>Settings</span></button>
+  </aside>
+
+  <main>
+    <header class="top"><h1 id="title">Dashboard</h1>
+      <div class="top-actions">
+        <button class="btn ghost" id="addBtn">+ Add</button>
+        <button class="btn primary" id="scanBtn"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M9 3 7.2 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3zm3 14a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg> Scan receipt</button>
+      </div>
+    </header>
+
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="tab active">
+      <div id="welcome" class="card callout" hidden>
+        <b>Welcome.</b> Add a few transactions, set up your plan, or <button class="link" id="loadDemo">load sample data</button> to explore.
+      </div>
+      <div class="grid kpis" id="kpis"></div>
+      <div class="grid two">
+        <div class="card"><div class="card-head"><h2>Spending by category</h2>
+          <select id="periodSel" aria-label="Period"><option value="month">This month</option><option value="year" selected>Last 12 months</option><option value="all">All time</option></select></div>
+          <div id="donut"></div></div>
+        <div class="card"><h2>Income vs. expense (monthly)</h2><div id="monthly"></div></div>
+      </div>
+      <div class="card"><h2>Top risks</h2><div id="topRisks"></div></div>
+    </section>
+
+    <!-- TRANSACTIONS -->
+    <section id="transactions" class="tab">
+      <div class="card">
+        <div class="filters">
+          <input type="search" id="search" placeholder="Search merchant or note" aria-label="Search">
+          <select id="fType" aria-label="Type"><option value="">All</option><option value="expense">Expenses</option><option value="income">Income</option></select>
+          <select id="fCat" aria-label="Category"></select>
+        </div>
+        <div id="txList"></div>
+      </div>
+    </section>
+
+    <!-- PLAN -->
+    <section id="plan" class="tab">
+      <form id="planForm" class="card" autocomplete="off">
+        <h2>About you</h2>
+        <div class="fields">
+          <label>Current age<input type="number" name="age" min="18" max="90" step="1"></label>
+          <label>Retirement age<input type="number" name="retireAge" min="30" max="90" step="1"></label>
+        </div>
+        <h2>Savings today</h2>
+        <div class="fields">
+          <label>Tax-deferred (401k / IRA)<input type="number" name="deferred" min="0" step="1000" inputmode="numeric"></label>
+          <label>Tax-free (Roth)<input type="number" name="free" min="0" step="1000" inputmode="numeric"></label>
+          <label>After-tax (brokerage / cash)<input type="number" name="after" min="0" step="1000" inputmode="numeric"></label>
+        </div>
+        <h2>Annual contributions until retirement</h2>
+        <div class="fields">
+          <label>Tax-deferred<input type="number" name="contribDeferred" min="0" step="500" inputmode="numeric"></label>
+          <label>Tax-free<input type="number" name="contribFree" min="0" step="500" inputmode="numeric"></label>
+          <label>After-tax<input type="number" name="contribAfter" min="0" step="500" inputmode="numeric"></label>
+        </div>
+        <h2>Retirement income</h2>
+        <div class="fields">
+          <label>Social Security claim age<input type="number" name="ssAge" min="62" max="70" step="1"></label>
+          <label>Monthly benefit at age 67<input type="number" name="ssFraMonthly" min="0" step="50" inputmode="numeric"></label>
+          <label>Pension per year<input type="number" name="pensionAnnual" min="0" step="500" inputmode="numeric"></label>
+          <label>Pension starts at age<input type="number" name="pensionAge" min="40" max="90" step="1"></label>
+        </div>
+        <h2>Spending &amp; assumptions</h2>
+        <div class="fields">
+          <label>Annual spending in retirement (today's $)
+            <input type="number" name="annualExpense" min="0" step="500" inputmode="numeric"></label>
+          <label>Investment return %<input type="number" name="returnPct" min="-5" max="15" step="0.1"></label>
+          <label>Inflation %<input type="number" name="inflationPct" min="0" max="15" step="0.1"></label>
+          <label>Tax on tax-deferred withdrawals %<input type="number" name="taxDeferredPct" min="0" max="50" step="1"></label>
+        </div>
+        <p class="muted" id="spendHint"></p>
+        <button type="button" class="btn ghost" id="useTracked">Use my tracked spending</button>
+      </form>
+    </section>
+
+    <!-- REPORT -->
+    <section id="report" class="tab">
+      <div class="card"><h2>Summary</h2><ul id="summary" class="summary"></ul></div>
+      <div class="grid two">
+        <div class="card"><h2>Retirement savings</h2><div id="chSavings"></div></div>
+        <div class="card"><h2>Income vs. expense in retirement</h2><div id="chIncExp"></div></div>
+      </div>
+      <div class="grid two">
+        <div class="card"><h2>Where retirement income comes from</h2><div id="chSources"></div></div>
+        <div class="card"><h2>Contributions</h2><div id="chContrib"></div></div>
+      </div>
+      <div class="card"><h2>How much can I afford?</h2><div id="chAfford"></div><div class="table-wrap"><table id="affordTable"></table></div></div>
+      <div class="card"><h2>Risks</h2><div id="risks"></div></div>
+      <p class="muted disclaimer">Projections are simplified estimates using the assumptions you enter, not financial, tax or investment advice. Consider speaking with a qualified advisor.</p>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="settings" class="tab">
+      <div class="card">
+        <h2>Your data</h2>
+        <p class="muted">Everything is stored only in this browser on this device. Export a backup to move it between your phone and desktop.</p>
+        <div class="row">
+          <button class="btn primary" id="exportBtn">Export backup</button>
+          <label class="btn ghost file">Import backup<input type="file" id="importFile" accept="application/json" hidden></label>
+          <button class="btn ghost" id="csvBtn">Export CSV</button>
+          <button class="btn danger" id="resetBtn">Delete all data</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Receipt scanning</h2>
+        <p class="muted">Text is read on your device with an open-source OCR engine (Tesseract.js). The engine files download from a CDN the first time you scan; the photo itself is never uploaded. Categories are suggested from keywords and you always confirm before saving.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Add / edit / scan dialog -->
+<dialog id="txDialog">
+  <form method="dialog" id="txForm" class="dialog-body">
+    <div class="dialog-head"><h2 id="dlgTitle">Add transaction</h2><button type="button" class="icon" id="dlgClose" aria-label="Close">✕</button></div>
+
+    <div id="scanBox" hidden>
+      <div class="scan-row">
+        <img id="receiptImg" alt="Receipt preview" hidden>
+        <div>
+          <label class="btn ghost file" id="takePhoto">Take / choose photo<input type="file" id="photo" accept="image/*" capture="environment" hidden></label>
+          <div id="ocrStatus" class="muted" role="status"></div>
+          <progress id="ocrProgress" max="1" value="0" hidden></progress>
+        </div>
+      </div>
+    </div>
+
+    <div class="seg" role="group" aria-label="Type">
+      <label><input type="radio" name="type" value="expense" checked><span>Expense</span></label>
+      <label><input type="radio" name="type" value="income"><span>Income</span></label>
+    </div>
+    <div class="fields">
+      <label>Amount<input type="number" name="amount" step="0.01" min="0" required inputmode="decimal"></label>
+      <label>Date<input type="date" name="date" required></label>
+      <label>Merchant / source<input type="text" name="merchant" maxlength="60"></label>
+      <label>Category<select name="category"></select></label>
+    </div>
+    <div id="suggest" class="chips" hidden></div>
+    <label>Note<input type="text" name="note" maxlength="120"></label>
+    <div class="row end">
+      <button type="button" class="btn danger" id="delTx" hidden>Delete</button>
+      <button type="submit" value="cancel" class="btn ghost" formnovalidate id="cancelTx">Cancel</button>
+      <button type="submit" value="save" class="btn primary" id="saveTx">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="js/engine.js"></script>
+<script src="js/receipt.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
