@@ -22,7 +22,25 @@
     try { localStorage.setItem(KEY, JSON.stringify(state)); }
     catch (e) { toast('Could not save — browser storage is full or blocked.'); }
   }
-  function toast(msg) { alert(msg); }
+  function toast(msg) {
+    const d = document.createElement('div');
+    d.className = 'toast'; d.setAttribute('role', 'status'); d.textContent = msg;
+    document.body.appendChild(d);
+    setTimeout(() => d.remove(), 4500);
+  }
+  // In-page confirmation (native confirm() is blocked in some embedded viewers).
+  function ask(msg, okLabel) {
+    return new Promise((resolve) => {
+      const d = $('#askDialog');
+      $('#askMsg').textContent = msg;
+      $('#askOk').textContent = okLabel || 'Confirm';
+      const done = (v) => { d.close(); $('#askOk').onclick = $('#askNo').onclick = null; resolve(v); };
+      $('#askOk').onclick = () => done(true);
+      $('#askNo').onclick = () => done(false);
+      d.oncancel = () => resolve(false);
+      d.showModal();
+    });
+  }
 
   // ---------- derived data ----------
   function enginePlan() {
@@ -170,8 +188,8 @@
   $('#scanBtn').addEventListener('click', () => { openTx(null, { scan: true }); $('#photo').click(); });
   $('#dlgClose').addEventListener('click', () => dlg.close());
   $('#cancelTx').addEventListener('click', (e) => { e.preventDefault(); dlg.close(); });
-  $('#delTx').addEventListener('click', () => {
-    if (editing && confirm('Delete this transaction?')) { state.transactions = state.transactions.filter((t) => t !== editing); save(); dlg.close(); refresh(); }
+  $('#delTx').addEventListener('click', async () => {
+    if (editing && await ask('Delete this transaction?', 'Delete')) { state.transactions = state.transactions.filter((t) => t !== editing); save(); dlg.close(); refresh(); }
   });
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -223,6 +241,7 @@
       const img = await loadImage(file);
       pendingThumb = toCanvas(img, 160).toDataURL('image/jpeg', 0.6);
       $('#receiptImg').src = pendingThumb; $('#receiptImg').hidden = false;
+      if (window.RC_OCR === false) { status.textContent = 'Photo attached. Automatic text reading is not available in this preview; enter the details below.'; return; }
       status.textContent = 'Loading text reader…'; prog.hidden = false; prog.value = 0;
       await loadTesseract();
       const result = await Tesseract.recognize(toCanvas(img, 1600), 'eng', {
@@ -351,13 +370,13 @@
       if (!s || !Array.isArray(s.transactions)) throw new Error();
       const clean = s.transactions.filter((t) => t && typeof t.amount === 'number' && /^\d{4}-\d{2}-\d{2}$/.test(t.date) && (t.type === 'income' || t.type === 'expense'))
         .map((t) => ({ id: String(t.id || uid()), type: t.type, amount: t.amount, date: t.date, merchant: String(t.merchant || ''), category: String(t.category || 'Miscellaneous'), note: String(t.note || ''), thumb: typeof t.thumb === 'string' && t.thumb.startsWith('data:image/') ? t.thumb : undefined }));
-      if (!confirm(`Replace current data with ${clean.length} transactions from this backup?`)) return;
+      if (!(await ask(`Replace current data with ${clean.length} transactions from this backup?`, 'Replace'))) return;
       state = { plan: Object.assign({}, Engine.DEFAULT_PLAN, s.plan), transactions: clean };
       save(); refresh();
     } catch (err) { toast('That file is not a valid Retirement Compass backup.'); }
   });
-  $('#resetBtn').addEventListener('click', () => {
-    if (confirm('Delete all transactions and reset your plan? This cannot be undone.')) {
+  $('#resetBtn').addEventListener('click', async () => {
+    if (await ask('Delete all transactions and reset your plan? This cannot be undone.', 'Delete everything')) {
       state = { plan: Object.assign({}, Engine.DEFAULT_PLAN), transactions: [] }; save(); showTab('dashboard');
     }
   });
