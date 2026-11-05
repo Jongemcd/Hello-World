@@ -7,7 +7,7 @@ the associates list.
 ## How to use it
 
 1. Open `index.html` in a web browser (double-click it — no install, server or
-   internet connection needed). Keep the `vendor/` folder next to it.
+   internet connection needed). Keep the `vendor/` and `assets/` folders next to it.
 2. Upload the two files:
    - **Locker layout (Facilities)** — a **Gents** and a **Ladies** tab. Lockers
      are grouped under "Zone …" headings, with rows labelled **Top**,
@@ -101,5 +101,7 @@ real chart, select the Dashboard table and use Excel's Insert → Chart.
 ## Branding
 
 The colors (crimson `#C01E39`, charcoal, white, warm taupe/grey) are sampled
-from Hollister's own site. The decorative locker/people graphics are drawn
-in CSS/SVG rather than reusing any photography from the site.
+from Hollister's own site. The banner photo (`assets/hero-locker-room.jpg`)
+was supplied for this tool — keep the `assets/` folder next to `index.html`
+alongside `vendor/`. To change it, replace that file (a wide crop works best;
+the banner shows the middle band of the image).
