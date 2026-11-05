@@ -1,93 +1,88 @@
-# Changing Room Locker Draw
+# Changing Room Locker Lottery
 
-A single self-contained web page for randomly assigning changing-room lockers
-to staff, for the Gents and Ladies changing rooms.
+A single self-contained web page that runs a fair, random locker lottery for
+the Gents and Ladies changing rooms, using the Facilities locker layout and
+the associates list.
 
 ## How to use it
 
-1. Open `index.html` in a web browser (double-click it — no install or server needed).
-2. Upload your Excel file. It should have a **Men** tab and a **Ladies** tab,
-   each with a header row containing a **Name** column, plus optional
-   **Index** and **Clock Number** columns — these help tell people apart when
-   two team members share a name, and both are carried through to the results
-   and the export. Older, header-less lists (just a name per row) still work;
-   the app falls back to numbering rows itself and leaves clock number blank.
-3. Check the **Settings** — the app guesses which tab is which, but you can
-   change it, and set a locker prefix/start number for each group to match
-   your physical locker numbering.
-4. Click **Run the Draw**. Watch the shuffle, then the full list appears.
-5. Use **Export to Excel** to download the results as a workbook with a
-   sheet each for Gents, Ladies, and a summary.
+1. Open `index.html` in a web browser (double-click it — no install, server or
+   internet connection needed). Keep the `vendor/` folder next to it.
+2. Upload the two files:
+   - **Locker layout (Facilities)** — a **Gents** and a **Ladies** tab. Lockers
+     are grouped under "Zone …" headings, with rows labelled **Top**,
+     **Middle Top**, **Middle Bottom** and **Bottom** in the first column.
+     Each locker number sits in its own cell. A **red fill** marks a Corner
+     locker, an **amber fill** marks a Half size locker, and **"-"** marks a
+     dummy slot. Any text after the locker numbers in a row is the
+     Facilities comment.
+   - **Associates list** — a **Male** and a **Female** tab with
+     **Payroll Id** (clock number), **First Name** and **Last Name**.
+3. Check **Settings**: the app matches Gents ↔ Male and Ladies ↔ Female
+   automatically (change them if needed) and shows, per room, how many
+   lockers are in the lottery versus how many people are on the list.
+4. Click **Run the Lottery**, then **Export to Excel**.
 
-Turn on **Instant mode** (top toggle) to skip the animation entirely — the
-draw runs automatically the moment the file is uploaded and the list appears
-straight away.
+Turn on **Instant mode** to skip the animation — the lottery runs as soon as
+both files are loaded (after any warnings are acknowledged).
 
-## One locker per person
+Sample files with made-up names are in `samples/` for trying it out.
 
-Each person on the list is placed into exactly one locker — the draw shuffles
-the list once and hands each entry off in turn, so nobody is picked twice from
-a clean list. The one thing the app can't know on its own is whether the
-*source file* has the same person entered twice by mistake. To catch that:
+## Lottery rules
 
-- If the **same clock number** appears more than once, the app blocks the
-  draw with a warning until you either fix the source file and re-upload, or
-  tick a box confirming you've checked it and want to proceed anyway.
-- If the **same name** appears more than once with no clock number to tell
-  them apart, you get an informational note (not a block) — this is often
-  just two different colleagues sharing a name, so add clock numbers if you
-  want the app to be sure.
+| Locker | In the lottery? | Shown as |
+|---|---|---|
+| Any locker in the **Top** row | No | **Unassigned** |
+| **Red** fill | No | **Corner** + Facilities comment |
+| **Amber** fill | No | **Half size** + Facilities comment |
+| **"-"** | Never (not a real locker) | **Dummy** |
+| Everything else | Yes | **Assigned** (or **Unassigned (spare)** if there are more lockers than people) |
 
-## The "4th locker" rule
+The Top / Corner / Half size rules are switches in Settings (all on by
+default) in case HR wants to relax one later. A red or amber locker in the
+Top row is shown by its colour reason; its Position still says Top.
 
-Lockers come in banks of four. By default, the app always leaves the 4th
-locker in every bank **Unassigned (reserved)**, so there's spare capacity to
-add new starts later without re-running the whole draw. This can be turned
-off in Settings if a future draw doesn't need it.
+The associates are shuffled once (using the browser's cryptographic random
+generator) and handed out to the available lockers in locker-number order.
 
-## Actual lockers on site
+**If there are more people than available lockers**, the app warns before
+the draw and asks for confirmation. Everyone who misses out is listed as
+**"No locker available"** with a **waiting list number** in their random
+draw order — nobody is silently dropped.
 
-By default the app sizes the lockers to exactly fit everyone on the list
-(rounded up to full banks of four). If your changing room has a fixed
-physical count instead, enter it under **Actual lockers on site** in
-Settings for each group — the draw will then use exactly that number of
-lockers rather than auto-sizing.
+Other checks before the draw: the same clock number appearing twice (blocks
+until acknowledged), duplicate locker numbers on the layout, and any fill
+colour that isn't the red/amber key.
 
-If there are more people than that fixed count can hold (after the 4th-locker
-reservation), the draw won't silently drop anyone: it blocks with a warning
-telling you exactly how many people won't get a locker, and once run, those
-people are listed at the bottom of the results/export marked **"No locker
-available"** so nothing is lost track of.
+## The Excel export
 
-## Summary tab stays live
+- **Gents Lockers** / **Ladies Lockers** — every locker in layout order:
+  Locker No, Zone, Position, Locker Type, Clock No, First Name, Last Name,
+  Status, Comment — followed by the waiting list.
+- **Summary** — per room: total lockers, assigned, unassigned (and how many of
+  those are Top), Corner, Half size, dummy slots, waiting list.
+- **Dashboard** — the headline figures per room, % of lockers assigned and a
+  simple text bar.
 
-The exported **Summary** and **Dashboard** sheets use real Excel formulas
-(`COUNTIF` against the Status column), not fixed numbers. So if you later
-open the export and fill in a name + clock number on a locker that was
-previously "Unassigned", the Assigned/Remaining counts on the Summary and
-Dashboard tabs update automatically the next time Excel recalculates
-(normally as soon as you edit the sheet or reopen the file).
+The Summary and Dashboard are **live Excel formulas**. "Assigned" counts
+lockers with a clock number entered, so if HR later types a new start's clock
+number and name onto an **Unassigned** row, Assigned goes up and Unassigned
+goes down automatically — there's no need to change the Status column.
 
-The **Dashboard** tab shows Total / Assigned / Remaining / % Assigned for
-each group plus a simple text bar. Note: the free, client-side Excel library
-this tool uses can't write native charts or cell colors, so there's no
-colored KPI tiles or an embedded pie/bar chart — just live formulas and a
-plain block-character bar. If you want an actual chart, select the
-Dashboard's table and use Excel's own Insert → Chart — it'll build off the
-live numbers already there.
+The free, offline Excel library this tool uses can't write cell colours or
+native charts, so the Dashboard uses plain formulas and a text bar. For a
+real chart, select the Dashboard table and use Excel's Insert → Chart.
+
+## Notes
+
+- Everything runs locally in the browser — the uploaded files and results
+  never leave the machine.
+- Changing a file, a tab or a rule clears the previous results so a stale
+  draw can't be exported by mistake. **Redraw** runs a brand new lottery.
+- Excel reading/writing uses the bundled `vendor/xlsx.full.min.js` (SheetJS).
 
 ## Branding
 
 The colors (crimson `#C01E39`, charcoal, white, warm taupe/grey) are sampled
-from Hollister's own site so the tool looks at home alongside other internal
-Hollister pages. The decorative locker/people graphics are drawn in CSS/SVG
-rather than reusing any photography from the site.
-
-## Notes
-
-- Everything runs locally in your browser — the uploaded list and results
-  never leave your machine.
-- Re-running **Redraw** generates a brand new random order; re-download the
-  export afterwards.
-- The Excel reading/writing is powered by the bundled `vendor/xlsx.full.min.js`
-  (SheetJS), so no internet connection is required to run the tool.
+from Hollister's own site. The decorative locker/people graphics are drawn
+in CSS/SVG rather than reusing any photography from the site.

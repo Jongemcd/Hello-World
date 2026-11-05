@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Changing Room Locker Draw</title>
+<title>Changing Room Locker Lottery</title>
 <script src="vendor/xlsx.full.min.js"></script>
 <style>
   :root{
@@ -21,6 +21,8 @@
     --ok:#2e9e6b;
     --warn:#c01e39;
     --bg:#f5f5f5;
+    --corner:#d9363e;
+    --half:#e0a100;
   }
   *{box-sizing:border-box;}
   input[type=checkbox]{accent-color:var(--brand-red);}
@@ -99,22 +101,38 @@
   .toggle-label strong{display:block;}
   .toggle-label span{color:var(--text-muted);font-size:.85rem;}
 
-  /* ---------- Form bits ---------- */
+  /* ---------- Uploads ---------- */
+  .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media (max-width:680px){.upload-grid{grid-template-columns:1fr;}}
+  .upload-box h3{margin:0 0 4px;font-size:.98rem;}
+  .upload-box .hint{margin:0;font-size:.84rem;line-height:1.45;}
+  .key{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:-1px;margin:0 2px;}
+  .key.red{background:var(--corner);}
+  .key.amber{background:var(--half);}
   input[type=file]{
-    display:block;margin:14px 0;padding:10px;border:1px dashed var(--panel-border);
+    display:block;margin:12px 0 6px;padding:10px;border:1px dashed var(--panel-border);
     border-radius:8px;width:100%;background:#fbfcfd;
   }
+  .file-status{font-size:.86rem;min-height:1.2em;}
+  .file-status.ok{color:var(--ok);}
+  .file-status.err{color:var(--warn);}
+
+  /* ---------- Settings ---------- */
   .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:12px;}
   @media (max-width:680px){.settings-grid{grid-template-columns:1fr;}}
   .settings-col h3{margin:0 0 8px;font-size:.95rem;color:var(--charcoal);}
   .settings-col label{display:block;font-size:.85rem;color:var(--text-muted);margin:8px 0 3px;}
-  .settings-col select, .settings-col input[type=text], .settings-col input[type=number]{
-    width:100%;padding:8px 10px;border:1px solid var(--panel-border);border-radius:6px;font-size:.9rem;
+  .settings-col select{
+    width:100%;padding:8px 10px;border:1px solid var(--panel-border);border-radius:6px;font-size:.9rem;background:#fff;
   }
-  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .checkbox-row{display:flex;align-items:flex-start;gap:8px;margin-top:16px;background:#f5f5f5;padding:10px 12px;border-radius:8px;border-left:3px solid var(--brand-red);}
+  .layout-summary{margin-top:12px;font-size:.84rem;line-height:1.6;background:#f5f5f5;border-radius:8px;padding:10px 12px;}
+  .layout-summary b{color:var(--charcoal);}
+  .layout-summary .shortfall{color:#7a1226;font-weight:600;}
+  .rules{margin-top:18px;display:grid;gap:8px;}
+  .checkbox-row{display:flex;align-items:flex-start;gap:8px;background:#f5f5f5;padding:10px 12px;border-radius:8px;border-left:3px solid var(--brand-red);cursor:pointer;}
   .checkbox-row input{margin-top:3px;}
   .checkbox-row span{font-size:.85rem;color:var(--text-muted);}
+  .checkbox-row strong{color:var(--charcoal);}
 
   .btn-primary{
     background:var(--accent);color:#fff;border:none;padding:12px 26px;font-size:1rem;
@@ -122,6 +140,7 @@
   }
   .btn-primary:hover{background:var(--brand-red-dark);}
   .btn-primary:active{transform:scale(.98);}
+  .btn-primary:disabled{opacity:.6;cursor:default;}
   .btn-secondary{
     background:#fff;color:var(--charcoal);border:1px solid var(--panel-border);padding:10px 20px;
     border-radius:8px;cursor:pointer;font-weight:600;font-size:.9rem;
@@ -129,11 +148,7 @@
   .btn-secondary:hover{background:#f5f5f5;}
   .btn-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
 
-  #uploadStatus{font-size:.9rem;margin-top:6px;}
-  #uploadStatus.ok{color:var(--ok);}
-  #uploadStatus.err{color:var(--warn);}
-
-  /* ---------- Duplicate warning ---------- */
+  /* ---------- Issues banner ---------- */
   .dup-warning{background:#fbe9ec;border:1px solid #e8b3bd;color:#7a1226;padding:16px 18px;border-radius:10px;margin-bottom:20px;}
   .dup-warning strong{color:#7a1226;}
   .dup-warning ul{margin:8px 0 4px;padding-left:20px;font-size:.87rem;line-height:1.55;}
@@ -148,10 +163,12 @@
   .reel small{display:block;font-weight:400;font-size:.75rem;color:rgba(255,255,255,.6);margin-top:4px;}
 
   /* ---------- Results ---------- */
-  .stats-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px;}
-  .stat{background:#f5f5f5;border-radius:8px;padding:10px 16px;min-width:120px;}
+  .stats-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+  .stat{background:#f5f5f5;border-radius:8px;padding:10px 16px;min-width:110px;}
   .stat .num{font-size:1.4rem;font-weight:700;color:var(--charcoal);}
   .stat .lbl{font-size:.78rem;color:var(--text-muted);}
+  .stat.alert{background:#fbe9ec;}
+  .stat.alert .num{color:#7a1226;}
 
   .tabs{display:flex;gap:8px;margin-bottom:14px;}
   .tab-btn{
@@ -163,15 +180,24 @@
   .search-export{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
   #searchBox{flex:1;min-width:180px;padding:9px 12px;border:1px solid var(--panel-border);border-radius:6px;}
 
-  table{width:100%;border-collapse:collapse;font-size:.9rem;}
+  table{width:100%;border-collapse:collapse;font-size:.88rem;}
   thead th{
-    text-align:left;background:var(--charcoal);color:#fff;padding:9px 12px;position:sticky;top:0;
+    text-align:left;background:var(--charcoal);color:#fff;padding:9px 10px;position:sticky;top:0;z-index:1;white-space:nowrap;
   }
-  tbody td{padding:8px 12px;border-bottom:1px solid var(--panel-border);}
-  tbody tr.bank-start td{border-top:2px solid var(--brand-red);}
+  tbody td{padding:7px 10px;border-bottom:1px solid var(--panel-border);vertical-align:top;}
+  tbody tr.bank-start td{border-top:2px solid #cfc8c2;}
+  tr.zone-row td{background:#efeae6;font-weight:700;color:var(--charcoal);border-top:2px solid var(--brand-red);font-size:.84rem;letter-spacing:.2px;}
   tr.reserved td{color:var(--text-muted);font-style:italic;background:#fafafa;}
+  tr.excluded td{color:var(--text-muted);background:#fafafa;}
+  tr.excluded.corner td:first-child{box-shadow:inset 4px 0 0 var(--corner);}
+  tr.excluded.half td:first-child{box-shadow:inset 4px 0 0 var(--half);}
   tr.no-locker td{color:#7a1226;font-weight:600;background:#fbe9ec;}
-  .table-wrap{max-height:560px;overflow:auto;border:1px solid var(--panel-border);border-radius:8px;}
+  tbody td:nth-child(3){white-space:nowrap;}
+  td.comment{max-width:280px;color:var(--text-muted);font-size:.8rem;}
+  .pill{display:inline-block;font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;vertical-align:1px;}
+  .pill.corner{background:#fbe1e3;color:#8a1f26;}
+  .pill.half{background:#fdf0cc;color:#6b4d00;}
+  .table-wrap{max-height:600px;overflow:auto;border:1px solid var(--panel-border);border-radius:8px;}
 
   footer{text-align:center;color:var(--text-muted);font-size:.8rem;margin-top:30px;}
 </style>
@@ -181,8 +207,8 @@
 
   <header class="hero">
     <div class="hero-top">
-      <h1>🔒 Changing Room Locker Draw</h1>
-      <p class="subtitle">Fair, random locker assignments for the Gents &amp; Ladies changing rooms</p>
+      <h1>🔒 Changing Room Locker Lottery</h1>
+      <p class="subtitle">Fair, random locker lottery assignments for the Gents &amp; Ladies changing rooms</p>
     </div>
     <div class="hero-band">
       <div class="lockers-row" id="lockersRow"></div>
@@ -204,62 +230,64 @@
         </label>
         <div class="toggle-label">
           <strong>⚡ Instant mode</strong>
-          <span>Skip the animation and step-by-step review — the draw runs the moment your file loads and the full list appears straight away.</span>
+          <span>Skip the animation and step-by-step review — the lottery runs as soon as both files are loaded and the full list appears straight away.</span>
         </div>
       </div>
     </section>
 
     <section id="upload-card" class="card">
-      <h2>1. Upload your list</h2>
-      <p class="hint">An Excel file (.xlsx) with a <strong>Men</strong> tab and a <strong>Ladies</strong> tab. Each row needs a <strong>Name</strong>, plus optional <strong>Index</strong> and <strong>Clock Number</strong> columns — handy for telling apart people who share a name.</p>
-      <input type="file" id="fileInput" accept=".xlsx,.xls">
-      <div id="uploadStatus"></div>
+      <h2>1. Upload your files</h2>
+      <div class="upload-grid">
+        <div class="upload-box">
+          <h3>Locker layout (Facilities)</h3>
+          <p class="hint">A <strong>Gents</strong> and a <strong>Ladies</strong> tab, lockers grouped by zone with rows labelled Top / Middle Top / Middle Bottom / Bottom. <span class="key red"></span>Red = Corner, <span class="key amber"></span>Amber = Half size, “-” = Dummy.</p>
+          <input type="file" id="layoutInput" accept=".xlsx,.xls">
+          <div id="layoutStatus" class="file-status"></div>
+        </div>
+        <div class="upload-box">
+          <h3>Associates list</h3>
+          <p class="hint">A <strong>Male</strong> and a <strong>Female</strong> tab with <strong>Payroll Id</strong> (clock number), <strong>First Name</strong> and <strong>Last Name</strong>.</p>
+          <input type="file" id="peopleInput" accept=".xlsx,.xls">
+          <div id="peopleStatus" class="file-status"></div>
+        </div>
+      </div>
     </section>
 
     <section id="settings-card" class="card hidden">
       <h2>2. Settings</h2>
-      <p class="hint">Match the tabs, set locker numbering, and confirm the reserved-locker rule.</p>
+      <p class="hint">Check the tabs are matched up correctly, then confirm which lockers are held back from the lottery.</p>
       <div class="settings-grid">
         <div class="settings-col">
           <h3>Gents</h3>
-          <label>Source tab</label>
-          <select id="gentsSheetSelect"></select>
-          <div class="row-2">
-            <div>
-              <label>Locker prefix</label>
-              <input type="text" id="gentsPrefix" value="M">
-            </div>
-            <div>
-              <label>Start number</label>
-              <input type="number" id="gentsStart" value="1" min="1">
-            </div>
-          </div>
-          <label>Actual lockers on site</label>
-          <input type="number" id="gentsLockerCount" min="0" placeholder="Auto (fit everyone)">
+          <label for="gentsLayoutSelect">Locker layout tab</label>
+          <select id="gentsLayoutSelect"></select>
+          <label for="gentsPeopleSelect">Associates tab</label>
+          <select id="gentsPeopleSelect"></select>
+          <div class="layout-summary" id="gentsSummary"></div>
         </div>
         <div class="settings-col">
           <h3>Ladies</h3>
-          <label>Source tab</label>
-          <select id="ladiesSheetSelect"></select>
-          <div class="row-2">
-            <div>
-              <label>Locker prefix</label>
-              <input type="text" id="ladiesPrefix" value="L">
-            </div>
-            <div>
-              <label>Start number</label>
-              <input type="number" id="ladiesStart" value="1" min="1">
-            </div>
-          </div>
-          <label>Actual lockers on site</label>
-          <input type="number" id="ladiesLockerCount" min="0" placeholder="Auto (fit everyone)">
+          <label for="ladiesLayoutSelect">Locker layout tab</label>
+          <select id="ladiesLayoutSelect"></select>
+          <label for="ladiesPeopleSelect">Associates tab</label>
+          <select id="ladiesPeopleSelect"></select>
+          <div class="layout-summary" id="ladiesSummary"></div>
         </div>
       </div>
-      <p class="hint" style="margin-top:10px;">Leave "Actual lockers on site" blank to size the lockers to exactly fit everyone. Enter the real physical count and the draw will use that fixed number instead — handy if the changing room has more (or fewer) lockers than people.</p>
-      <div class="checkbox-row">
-        <input type="checkbox" id="reserveFourthToggle" checked>
-        <span><strong>Reserve every 4th locker in each bank of 4 as "Unassigned"</strong><br>
-        Per HR's request, lockers come in banks of four — the fourth is always left free so there's room to add new starts later.</span>
+      <div class="rules">
+        <label class="checkbox-row">
+          <input type="checkbox" id="ruleTop" checked>
+          <span><strong>Leave every Top locker unassigned</strong><br>Top-row lockers stay free and show as “Unassigned” — room to add new starts later.</span>
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" id="ruleCorner" checked>
+          <span><strong>Don’t assign Corner lockers <span class="key red"></span></strong><br>Shown as “Corner”, with the Facilities comment.</span>
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" id="ruleHalf" checked>
+          <span><strong>Don’t assign Half size lockers <span class="key amber"></span></strong><br>Shown as “Half size”, with the Facilities comment.</span>
+        </label>
+        <p class="hint" style="margin:2px 0 0;">Dummy slots (“-”) are never assigned — they aren’t real lockers.</p>
       </div>
     </section>
 
@@ -267,14 +295,14 @@
       <div id="duplicateWarningBody"></div>
       <label class="dup-ack hidden" id="dupAckRow">
         <input type="checkbox" id="dupAckCheckbox">
-        I've reviewed the issues above and want to run the draw anyway
+        I've reviewed the issues above and want to run the lottery anyway
       </label>
     </section>
 
     <section id="draw-card" class="card hidden">
-      <h2>3. Run the draw</h2>
+      <h2>3. Run the lottery</h2>
       <div class="btn-row">
-        <button id="runDrawBtn" class="btn-primary">🎲 Run the Draw</button>
+        <button id="runDrawBtn" class="btn-primary">🎲 Run the Lottery</button>
         <button id="redrawBtn" class="btn-secondary hidden">↻ Redraw (new random order)</button>
       </div>
       <div id="drawAnimation" class="hidden">
@@ -284,19 +312,19 @@
 
     <section id="results-card" class="card hidden">
       <h2>4. Results</h2>
-      <div class="stats-row" id="statsRow"></div>
       <div class="tabs">
-        <button class="tab-btn active" data-group="gents" id="tabGents">Gents</button>
-        <button class="tab-btn" data-group="ladies" id="tabLadies">Ladies</button>
+        <button class="tab-btn active" id="tabGents">Gents</button>
+        <button class="tab-btn" id="tabLadies">Ladies</button>
       </div>
+      <div class="stats-row" id="statsRow"></div>
       <div class="search-export">
-        <input type="text" id="searchBox" placeholder="Search by name, clock number, or locker number…">
+        <input type="text" id="searchBox" placeholder="Search by name, clock number or locker number…">
         <button class="btn-secondary" id="exportBtn">⬇ Export to Excel</button>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Locker</th><th>Bank</th><th>Index</th><th>Clock No</th><th>Assigned To</th><th>Status</th></tr>
+            <tr><th>Locker</th><th>Zone</th><th>Position</th><th>Clock No</th><th>Name</th><th>Status</th><th>Comment</th></tr>
           </thead>
           <tbody id="resultsBody"></tbody>
         </table>
@@ -305,586 +333,781 @@
 
   </main>
 
-  <footer>Changing Room Locker Draw &middot; random assignment runs entirely in your browser — no data is uploaded anywhere.</footer>
+  <footer>Changing Room Locker Lottery by JohnJoe McDermott &middot; random assignment runs entirely in your browser — no data is uploaded anywhere. Requested by Aoife Hanahoe</footer>
 </div>
 
 <canvas id="confettiCanvas" style="position:fixed;inset:0;pointer-events:none;display:none;z-index:999;"></canvas>
 
 <script>
 (function(){
+  'use strict';
 
   // ---------- decorative locker row ----------
   var lockersRow = document.getElementById('lockersRow');
   for (var i=0;i<16;i++){
     var d = document.createElement('div');
-    d.className = 'locker-door' + ((i+1)%4===0 ? ' reserved' : '');
+    d.className = 'locker-door' + (i%4===0 ? ' reserved' : '');
     lockersRow.appendChild(d);
   }
 
+  // ---------- constants ----------
+  var POSITIONS = [
+    {key:'Top',           re:/^top$/i},
+    {key:'Middle Top',    re:/^mid(dle)?[\s-]*top$/i},
+    {key:'Middle Bottom', re:/^mid(dle)?[\s-]*bottom$/i},
+    {key:'Bottom',        re:/^bottom$/i}
+  ];
+  // Status text is what the exported Summary formulas count on, so keep these in sync with buildSummary().
+  var STATUS = {
+    ASSIGNED: 'Assigned',
+    TOP:      'Unassigned',
+    SPARE:    'Unassigned (spare)',
+    CORNER:   'Corner',
+    HALF:     'Half size',
+    DUMMY:    'Dummy',
+    WAIT:     'No locker available'
+  };
+  var GROUPS = [
+    {key:'gents',  label:'Gents',  peopleLabel:'male associates'},
+    {key:'ladies', label:'Ladies', peopleLabel:'female associates'}
+  ];
+  var LADIES_RE = /\b(ladies|women|female|girls)\b/i;
+  var GENTS_RE  = /\b(men|gents|gentlemen|male|boys)\b/i;
+  var CLOCK_HEADER_RE = /clock|payroll|employee\s*(id|no|number)|emp\.?\s*(id|no)|staff\s*(id|no)|personnel/i;
+  var FIRST_HEADER_RE = /first|forename|given/i;
+  var LAST_HEADER_RE  = /last|surname|family/i;
+  var NAME_HEADER_RE  = /\bname\b|employee|associate|staff|member/i;
+  var HEADER_WORDS    = /^(name|names|employee|employee name|staff|full name|surname|id|men|ladies|gents|women|male|female)$/i;
+
   // ---------- state ----------
-  var workbook = null;
-  var sheetNames = [];
-  var drawResults = { gents: [], ladies: [] };
+  var state = {
+    layoutWb: null, peopleWb: null,
+    layouts: {gents:null, ladies:null},
+    people:  {gents:[], ladies:[]},
+    results: {gents:[], ladies:[]},
+    hasResults: false,
+    lastBlockingKey: ''
+  };
   var activeGroup = 'gents';
+  var issues = {blocking:[], info:[]};
 
-  var fileInput = document.getElementById('fileInput');
-  var uploadStatus = document.getElementById('uploadStatus');
-  var settingsCard = document.getElementById('settings-card');
-  var drawCard = document.getElementById('draw-card');
-  var resultsCard = document.getElementById('results-card');
-  var gentsSheetSelect = document.getElementById('gentsSheetSelect');
-  var ladiesSheetSelect = document.getElementById('ladiesSheetSelect');
-  var instantModeToggle = document.getElementById('instantModeToggle');
-  var reserveFourthToggle = document.getElementById('reserveFourthToggle');
-  var runDrawBtn = document.getElementById('runDrawBtn');
-  var redrawBtn = document.getElementById('redrawBtn');
-  var drawAnimation = document.getElementById('drawAnimation');
-  var reelText = document.getElementById('reelText');
-  var duplicateWarningSection = document.getElementById('duplicate-warning');
-  var duplicateWarningBody = document.getElementById('duplicateWarningBody');
-  var dupAckRow = document.getElementById('dupAckRow');
-  var dupAckCheckbox = document.getElementById('dupAckCheckbox');
-  var duplicateInfo = { gents: null, ladies: null };
-  var capacityInfo = { gents: null, ladies: null };
-  var gentsLockerCount = document.getElementById('gentsLockerCount');
-  var ladiesLockerCount = document.getElementById('ladiesLockerCount');
+  function $(id){ return document.getElementById(id); }
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+  }
+  function plural(n, one, many){ return n + ' ' + (n === 1 ? one : (many || one + 's')); }
 
-  // ---------- helpers ----------
-  function fisherYatesShuffle(arr){
+  var els = {
+    layoutInput: $('layoutInput'), peopleInput: $('peopleInput'),
+    layoutStatus: $('layoutStatus'), peopleStatus: $('peopleStatus'),
+    settingsCard: $('settings-card'), drawCard: $('draw-card'), resultsCard: $('results-card'),
+    instant: $('instantModeToggle'),
+    ruleTop: $('ruleTop'), ruleCorner: $('ruleCorner'), ruleHalf: $('ruleHalf'),
+    runBtn: $('runDrawBtn'), redrawBtn: $('redrawBtn'),
+    drawAnimation: $('drawAnimation'), reelText: $('reelText'),
+    warning: $('duplicate-warning'), warningBody: $('duplicateWarningBody'),
+    ackRow: $('dupAckRow'), ack: $('dupAckCheckbox'),
+    tabGents: $('tabGents'), tabLadies: $('tabLadies'),
+    searchBox: $('searchBox'), statsRow: $('statsRow'), resultsBody: $('resultsBody')
+  };
+  var selects = {
+    gents:  {layout: $('gentsLayoutSelect'),  people: $('gentsPeopleSelect'),  summary: $('gentsSummary')},
+    ladies: {layout: $('ladiesLayoutSelect'), people: $('ladiesPeopleSelect'), summary: $('ladiesSummary')}
+  };
+
+  // ---------- randomness ----------
+  // Rejection sampling avoids the slight modulo bias of rand % n, so every
+  // ordering of the list is exactly equally likely.
+  function randomInt(n){
+    var buf = new Uint32Array(1);
+    var limit = Math.floor(4294967296 / n) * n;
+    do { crypto.getRandomValues(buf); } while (buf[0] >= limit);
+    return buf[0] % n;
+  }
+  function shuffle(arr){
     var a = arr.slice();
     for (var i = a.length - 1; i > 0; i--){
-      var rand = new Uint32Array(1);
-      crypto.getRandomValues(rand);
-      var j = rand[0] % (i + 1);
+      var j = randomInt(i + 1);
       var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
     }
     return a;
   }
 
-  var LADIES_RE = /\b(ladies|women|female|girls)\b/i;
-  var GENTS_RE  = /\b(men|gents|gentlemen|male|boys)\b/i;
-  var HEADER_WORDS = /^(name|names|employee|employee name|staff|full name|surname|id|men|ladies|gents|women)$/i;
-  var NAME_HEADER_RE = /\b(name|surname|employee|staff|member)\b/i;
-  var CLOCK_HEADER_RE = /clock/i;
-  var INDEX_HEADER_RE = /index/i;
+  // ---------- reading files ----------
+  function readWorkbook(file, cb){
+    var reader = new FileReader();
+    reader.onload = function(evt){
+      try { cb(null, XLSX.read(new Uint8Array(evt.target.result), {type:'array', cellStyles:true})); }
+      catch (err) { cb(err); }
+    };
+    reader.onerror = function(){ cb(reader.error || new Error('Could not read the file.')); };
+    reader.readAsArrayBuffer(file);
+  }
 
-  function guessSheet(names, re){
-    for (var i=0;i<names.length;i++){ if (re.test(names[i])) return names[i]; }
+  function cellAt(ws, r, c){ return ws[XLSX.utils.encode_cell({r:r, c:c})]; }
+  function cellString(cell){ return cell && cell.v != null ? String(cell.v).trim() : ''; }
+
+  // Facilities mark Corner lockers with a red fill and Half size lockers with
+  // an amber fill on the locker-number cell itself.
+  function fillColour(cell){
+    var s = cell && cell.s;
+    if (!s || s.patternType !== 'solid' || !s.fgColor) return null;
+    var rgb = s.fgColor.rgb;
+    if (!rgb || !/^[0-9a-f]{6,8}$/i.test(rgb)) return 'other';
+    rgb = rgb.slice(-6);
+    var r = parseInt(rgb.slice(0,2),16), g = parseInt(rgb.slice(2,4),16), b = parseInt(rgb.slice(4,6),16);
+    if (r >= 245 && g >= 245 && b >= 245) return null;
+    if (r >= 150 && g <= 90 && b <= 90) return 'red';
+    if (r >= 200 && g >= 100 && g <= 225 && b <= 110) return 'amber';
+    return 'other';
+  }
+
+  function positionOf(text){
+    var t = text.replace(/\s+/g,' ').trim();
+    for (var i=0;i<POSITIONS.length;i++){
+      if (POSITIONS[i].re.test(t)) return {key: POSITIONS[i].key, index: i};
+    }
     return null;
   }
 
-  function cellText(row, col){
-    if (col === -1 || row[col] === undefined || row[col] === null) return '';
-    return String(row[col]).trim();
+  // Reads one Facilities tab into a flat list of locker slots in physical order
+  // (zone, then column, then Top -> Bottom), which is also the numbering order.
+  //   - A row whose first cell is Top / Middle Top / Middle Bottom / Bottom holds lockers.
+  //   - Any other row containing "Zone ..." starts a new zone.
+  //   - In a locker row, numbers are lockers, "-" is a dummy slot, and the first
+  //     piece of other text is the comment; scanning stops there (or after a run of
+  //     blank cells) so the colour legend at the top-right is never read as lockers.
+  function parseLayoutSheet(ws){
+    var result = {slots:[], unknownColours:[], duplicateNumbers:[], lockerCount:0};
+    if (!ws || !ws['!ref']) return result;
+    var range = XLSX.utils.decode_range(ws['!ref']);
+    var zone = 'Unzoned', zoneIndex = 0;
+
+    for (var r = range.s.r; r <= range.e.r; r++){
+      var pos = positionOf(cellString(cellAt(ws, r, range.s.c)));
+      if (!pos){
+        for (var zc = range.s.c; zc <= range.e.c; zc++){
+          var zt = cellString(cellAt(ws, r, zc));
+          if (/^zone\b/i.test(zt)){ zone = zt.replace(/\s+/g,' '); zoneIndex++; break; }
+        }
+        continue;
+      }
+
+      var rowSlots = [], comment = '', seen = false, gap = 0;
+      for (var c = range.s.c + 1; c <= range.e.c; c++){
+        var cell = cellAt(ws, r, c);
+        var text = cellString(cell);
+        if (text === ''){
+          if (seen && ++gap >= 3) break;
+          continue;
+        }
+        gap = 0;
+        if (typeof cell.v === 'number' || /^\d+$/.test(text)){
+          seen = true;
+          rowSlots.push({lockerNo: Number(text), dummy: false, colour: fillColour(cell), col: c,
+                         addr: XLSX.utils.encode_cell({r:r, c:c})});
+        } else if (/^[-–—]$/.test(text)){
+          seen = true;
+          rowSlots.push({lockerNo: null, dummy: true, colour: null, col: c});
+        } else {
+          comment = text;
+          break;
+        }
+      }
+
+      // The comment explains the coloured locker(s) in that row, not the plain ones
+      // beside them, so only attach it to coloured lockers when there are any.
+      var hasColoured = rowSlots.some(function(s){ return s.colour === 'red' || s.colour === 'amber'; });
+      rowSlots.forEach(function(s){
+        s.zone = zone; s.zoneIndex = zoneIndex;
+        s.position = pos.key; s.posIndex = pos.index;
+        s.comment = (!hasColoured || s.colour === 'red' || s.colour === 'amber') ? comment : '';
+        if (s.colour === 'other') result.unknownColours.push(s.lockerNo + ' (' + s.addr + ')');
+        result.slots.push(s);
+      });
+    }
+
+    result.slots.sort(function(a, b){ return a.zoneIndex - b.zoneIndex || a.col - b.col || a.posIndex - b.posIndex; });
+
+    var seenNos = {};
+    result.slots.forEach(function(s){
+      if (s.dummy) return;
+      result.lockerCount++;
+      seenNos[s.lockerNo] = (seenNos[s.lockerNo] || 0) + 1;
+    });
+    Object.keys(seenNos).forEach(function(n){ if (seenNos[n] > 1) result.duplicateNumbers.push(n); });
+    return result;
   }
 
-  // Reads a Men/Ladies tab into {index, clockNumber, name} records. Looks for
-  // Name/Index/Clock Number header columns first (any order); falls back to
-  // guessing a single name column for older, header-less lists.
-  function parsePeopleSheet(sheet){
-    var rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
+  // Reads a Male / Female tab into {clockNumber, firstName, lastName, name} records.
+  function parsePeopleSheet(ws){
+    if (!ws) return [];
+    var rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
     if (!rows.length) return [];
 
     var header = rows[0].map(function(h){ return String(h).trim(); });
-    var nameCol = -1, clockCol = -1, indexCol = -1;
-    for (var c=0;c<header.length;c++){
-      var h = header[c];
-      if (nameCol === -1 && NAME_HEADER_RE.test(h)) nameCol = c;
-      if (clockCol === -1 && CLOCK_HEADER_RE.test(h)) clockCol = c;
-      if (indexCol === -1 && INDEX_HEADER_RE.test(h)) indexCol = c;
-    }
+    var col = {clock:-1, first:-1, last:-1, name:-1};
+    header.forEach(function(h, i){
+      if (!h) return;
+      if (col.clock === -1 && CLOCK_HEADER_RE.test(h)) col.clock = i;
+      else if (col.first === -1 && FIRST_HEADER_RE.test(h)) col.first = i;
+      else if (col.last === -1 && LAST_HEADER_RE.test(h)) col.last = i;
+      else if (col.name === -1 && NAME_HEADER_RE.test(h)) col.name = i;
+    });
 
-    if (nameCol === -1){
-      // legacy fallback: no recognizable header row, guess the column with the most text
-      var colCount = Math.max.apply(null, rows.map(function(r){return r.length;}).concat([1]));
-      var maxCols = Math.min(colCount, 5);
-      var bestCol = 0, bestScore = -1;
-      for (var cc=0; cc<maxCols; cc++){
-        var score = 0;
-        for (var r=0;r<rows.length;r++){
-          var v = rows[r][cc];
-          if (typeof v === 'string' && v.trim() !== '') score++;
-          else if (typeof v === 'number') score++;
-        }
-        if (score > bestScore){ bestScore = score; bestCol = cc; }
+    function cell(row, i){ return i === -1 || row[i] == null ? '' : String(row[i]).trim(); }
+
+    if (col.first === -1 && col.last === -1 && col.name === -1){
+      // No recognisable header: treat the busiest text column as a plain name list.
+      var best = 0, bestScore = -1;
+      for (var c = 0; c < Math.min(5, header.length || 1); c++){
+        var score = rows.filter(function(r){ return cell(r, c) !== ''; }).length;
+        if (score > bestScore){ bestScore = score; best = c; }
       }
-      var values = rows.map(function(r){ return cellText(r, bestCol); }).filter(function(v){ return v !== ''; });
-      if (values.length && HEADER_WORDS.test(values[0])) values.shift();
-      return values.map(function(name, i){ return {index: String(i+1), clockNumber:'', name:name}; });
+      var names = rows.map(function(r){ return cell(r, best); }).filter(Boolean);
+      if (names.length && HEADER_WORDS.test(names[0])) names.shift();
+      return names.map(function(n){ return {clockNumber:'', firstName:n, lastName:'', name:n}; });
     }
 
     var people = [];
-    for (var r=1; r<rows.length; r++){
-      var name = cellText(rows[r], nameCol);
-      if (!name) continue;
-      var clockNumber = cellText(rows[r], clockCol);
-      var indexVal = cellText(rows[r], indexCol) || String(people.length+1);
-      people.push({index: indexVal, clockNumber: clockNumber, name: name});
+    for (var r = 1; r < rows.length; r++){
+      var first = cell(rows[r], col.first), last = cell(rows[r], col.last);
+      var full = (first || last) ? (first + ' ' + last).trim() : cell(rows[r], col.name);
+      var clock = cell(rows[r], col.clock);
+      if (!full && !clock) continue;
+      people.push({
+        clockNumber: clock,
+        firstName: (first || last) ? first : full,
+        lastName: last,
+        name: full || '(no name)'
+      });
     }
     return people;
   }
 
-  // Flags the same clock number appearing more than once (near-certain duplicate
-  // row) as blocking, and the same name with no clock number to tell them apart
-  // (could just be two different colleagues) as informational only.
+  // ---------- rules ----------
+  function getRules(){
+    return {top: els.ruleTop.checked, corner: els.ruleCorner.checked, half: els.ruleHalf.checked};
+  }
+  function lockerType(slot){
+    if (slot.dummy) return 'Dummy';
+    if (slot.colour === 'red') return 'Corner';
+    if (slot.colour === 'amber') return 'Half size';
+    return 'Standard';
+  }
+  // A red or amber locker in the Top row is reported by its colour reason;
+  // the Position column still shows it's Top.
+  function categorise(slot, rules){
+    if (slot.dummy) return 'dummy';
+    if (slot.colour === 'red' && rules.corner) return 'corner';
+    if (slot.colour === 'amber' && rules.half) return 'half';
+    if (slot.posIndex === 0 && rules.top) return 'top';
+    return 'eligible';
+  }
+  function layoutCounts(layout, rules){
+    var counts = {total: layout ? layout.lockerCount : 0, eligible:0, top:0, corner:0, half:0, dummy:0};
+    if (layout) layout.slots.forEach(function(s){ counts[categorise(s, rules)]++; });
+    return counts;
+  }
+
+  // ---------- settings / validation ----------
+  function fillSelect(sel, names, guessRe, avoid){
+    var previous = sel.value;
+    sel.innerHTML = '';
+    names.forEach(function(n){
+      var opt = document.createElement('option');
+      opt.value = n; opt.textContent = n;
+      sel.appendChild(opt);
+    });
+    if (previous && names.indexOf(previous) !== -1){ sel.value = previous; return; }
+    var guess = names.filter(function(n){ return n !== avoid && guessRe.test(n); })[0] ||
+                names.filter(function(n){ return n !== avoid; })[0] || names[0];
+    if (guess) sel.value = guess;
+  }
+  function populateSelects(kind){
+    var wb = kind === 'layout' ? state.layoutWb : state.peopleWb;
+    if (!wb) return;
+    var names = wb.SheetNames;
+    // Match Ladies/Female first: "Female" and "Women" both contain "male"/"men".
+    fillSelect(selects.ladies[kind], names, LADIES_RE, null);
+    fillSelect(selects.gents[kind], names, GENTS_RE, selects.ladies[kind].value);
+  }
+
+  function refreshAll(){
+    GROUPS.forEach(function(g){
+      if (state.layoutWb) state.layouts[g.key] = parseLayoutSheet(state.layoutWb.Sheets[selects[g.key].layout.value]);
+      if (state.peopleWb) state.people[g.key]  = parsePeopleSheet(state.peopleWb.Sheets[selects[g.key].people.value]);
+    });
+    var ready = !!(state.layoutWb && state.peopleWb);
+    els.settingsCard.classList.toggle('hidden', !ready);
+    els.drawCard.classList.toggle('hidden', !ready);
+    renderSummaries();
+    computeIssues();
+    renderIssues();
+  }
+
+  function renderSummaries(){
+    var rules = getRules();
+    GROUPS.forEach(function(g){
+      var layout = state.layouts[g.key], people = state.people[g.key];
+      if (!layout){ selects[g.key].summary.innerHTML = ''; return; }
+      var c = layoutCounts(layout, rules);
+      var held = [];
+      if (c.top) held.push(c.top + ' Top');
+      if (c.corner) held.push(c.corner + ' Corner');
+      if (c.half) held.push(c.half + ' Half size');
+      var html = '<b>' + c.total + '</b> lockers on the layout · <b>' + c.eligible + '</b> in the lottery' +
+                 (held.length ? ' (' + held.join(', ') + ' held back)' : '') +
+                 (c.dummy ? ' · ' + plural(c.dummy, 'dummy slot') : '') +
+                 '<br><b>' + people.length + '</b> ' + g.peopleLabel + ' on the list';
+      var shortfall = people.length - c.eligible;
+      if (shortfall > 0) html += '<br><span class="shortfall">' + shortfall + ' more people than available lockers</span>';
+      else html += ' · ' + plural(-shortfall, 'locker') + ' to spare';
+      selects[g.key].summary.innerHTML = html;
+    });
+  }
+
   function findDuplicates(people){
-    var byClock = {};
+    var byClock = {}, byName = {}, missingClock = 0;
     people.forEach(function(p){
-      if (!p.clockNumber) return;
-      (byClock[p.clockNumber] = byClock[p.clockNumber] || []).push(p);
-    });
-    var dupClockGroups = Object.keys(byClock)
-      .filter(function(k){ return byClock[k].length > 1; })
-      .map(function(k){ return { clockNumber: k, entries: byClock[k] }; });
-
-    var byName = {};
-    people.filter(function(p){ return !p.clockNumber; }).forEach(function(p){
-      var key = p.name.trim().toLowerCase();
-      (byName[key] = byName[key] || []).push(p);
-    });
-    var dupNameGroups = Object.keys(byName)
-      .filter(function(k){ return byName[k].length > 1; })
-      .map(function(k){ return { name: byName[k][0].name, entries: byName[k] }; });
-
-    return { dupClockGroups: dupClockGroups, dupNameGroups: dupNameGroups };
-  }
-
-  // Simulates the bank layout to work out how many of a fixed locker count are
-  // reserved (every 4th) vs assignable, without needing to actually run the draw.
-  function countReservedSlots(totalLockers, reserveFourth){
-    if (!reserveFourth) return 0;
-    var reserved = 0;
-    for (var i=0;i<totalLockers;i++){
-      if ((i % 4) + 1 === 4) reserved++;
-    }
-    return reserved;
-  }
-
-  function checkCapacity(peopleCount, capacityInputValue, reserveFourth){
-    var capacity = parseInt(capacityInputValue, 10) || 0;
-    if (capacity <= 0) return null; // auto-size: no fixed constraint, can't overflow
-    var reserved = countReservedSlots(capacity, reserveFourth);
-    var assignable = capacity - reserved;
-    var overflow = Math.max(0, peopleCount - assignable);
-    if (overflow <= 0) return null;
-    return { capacity: capacity, reserved: reserved, assignable: assignable, peopleCount: peopleCount, overflow: overflow };
-  }
-
-  function hasBlockingDuplicates(){
-    return !!((duplicateInfo.gents && duplicateInfo.gents.dupClockGroups.length) ||
-              (duplicateInfo.ladies && duplicateInfo.ladies.dupClockGroups.length) ||
-              capacityInfo.gents || capacityInfo.ladies);
-  }
-
-  function refreshDuplicateCheck(){
-    if (!workbook) return;
-    var gentsSheet = workbook.Sheets[gentsSheetSelect.value];
-    var ladiesSheet = workbook.Sheets[ladiesSheetSelect.value];
-    var gentsPeople = gentsSheet ? parsePeopleSheet(gentsSheet) : [];
-    var ladiesPeople = ladiesSheet ? parsePeopleSheet(ladiesSheet) : [];
-    duplicateInfo.gents = findDuplicates(gentsPeople);
-    duplicateInfo.ladies = findDuplicates(ladiesPeople);
-    capacityInfo.gents = checkCapacity(gentsPeople.length, gentsLockerCount.value, reserveFourthToggle.checked);
-    capacityInfo.ladies = checkCapacity(ladiesPeople.length, ladiesLockerCount.value, reserveFourthToggle.checked);
-    renderDuplicateWarning();
-  }
-
-  function renderDuplicateWarning(){
-    var blockingItems = [];
-    var infoItems = [];
-    [['gents','Gents'], ['ladies','Ladies']].forEach(function(pair){
-      var info = duplicateInfo[pair[0]];
-      if (!info) return;
-      info.dupClockGroups.forEach(function(g){
-        blockingItems.push('<li><strong>' + pair[1] + ':</strong> clock number <strong>' + g.clockNumber + '</strong> appears ' +
-          g.entries.length + ' times (' + g.entries.map(function(e){return e.name;}).join(', ') +
-          ') — looks like a duplicate row. Left as-is, this person would be drawn for ' + g.entries.length + ' lockers.</li>');
-      });
-      info.dupNameGroups.forEach(function(g){
-        infoItems.push('<li><strong>' + pair[1] + ':</strong> "' + g.name + '" appears ' + g.entries.length +
-          ' times with no clock number to tell them apart — add clock numbers if these are different people.</li>');
-      });
-      var cap = capacityInfo[pair[0]];
-      if (cap){
-        blockingItems.push('<li><strong>' + pair[1] + ':</strong> ' + cap.peopleCount + ' people but only ' + cap.assignable +
-          ' of the ' + cap.capacity + ' lockers on site can be assigned (' + cap.reserved + ' reserved) — ' + cap.overflow +
-          ' ' + (cap.overflow === 1 ? 'person' : 'people') + ' won\'t get a locker unless you increase the locker count or clear it to auto-size.</li>');
+      if (p.clockNumber) (byClock[p.clockNumber] = byClock[p.clockNumber] || []).push(p);
+      else {
+        missingClock++;
+        var key = p.name.toLowerCase();
+        (byName[key] = byName[key] || []).push(p);
       }
     });
-
-    if (!blockingItems.length && !infoItems.length){
-      duplicateWarningSection.classList.add('hidden');
-      duplicateWarningBody.innerHTML = '';
-      dupAckRow.classList.add('hidden');
-      dupAckCheckbox.checked = false;
-      return;
-    }
-
-    var html = '';
-    if (blockingItems.length){
-      html += '<strong>⚠ Issues found — check before drawing</strong><ul>' + blockingItems.join('') + '</ul>';
-    }
-    if (infoItems.length){
-      html += '<strong>ℹ Same name, no clock number</strong><ul>' + infoItems.join('') + '</ul>';
-    }
-    duplicateWarningBody.innerHTML = html;
-    dupAckRow.classList.toggle('hidden', blockingItems.length === 0);
-    if (blockingItems.length === 0) dupAckCheckbox.checked = false;
-    duplicateWarningSection.classList.remove('hidden');
+    return {
+      clockGroups: Object.keys(byClock).filter(function(k){ return byClock[k].length > 1; })
+                     .map(function(k){ return {clockNumber:k, entries:byClock[k]}; }),
+      nameGroups: Object.keys(byName).filter(function(k){ return byName[k].length > 1; })
+                     .map(function(k){ return {name: byName[k][0].name, entries: byName[k]}; }),
+      missingClock: missingClock
+    };
   }
 
-  function blockedByDuplicates(){
-    if (hasBlockingDuplicates() && !dupAckCheckbox.checked){
-      duplicateWarningSection.scrollIntoView({behavior:'smooth', block:'center'});
+  function computeIssues(){
+    var blocking = [], info = [];
+    var rules = getRules();
+    GROUPS.forEach(function(g){
+      var L = '<strong>' + g.label + ':</strong> ';
+      var layout = state.layouts[g.key], people = state.people[g.key];
+      if (state.layoutWb && layout){
+        var tab = esc(selects[g.key].layout.value);
+        if (!layout.slots.length){
+          blocking.push(L + 'no lockers found on the “' + tab + '” layout tab. Rows need Top / Middle Top / Middle Bottom / Bottom in the first column.');
+        }
+        if (layout.duplicateNumbers.length){
+          blocking.push(L + 'locker number(s) ' + esc(layout.duplicateNumbers.join(', ')) + ' appear more than once on the “' + tab + '” tab — two people could be given the same number.');
+        }
+        if (layout.unknownColours.length){
+          info.push(L + 'locker(s) ' + esc(layout.unknownColours.join(', ')) + ' have a fill colour that isn’t the red or amber key, so they’re treated as standard lockers.');
+        }
+      }
+      if (state.peopleWb){
+        var dup = findDuplicates(people);
+        dup.clockGroups.forEach(function(d){
+          blocking.push(L + 'clock number <strong>' + esc(d.clockNumber) + '</strong> appears ' + d.entries.length + ' times (' +
+            esc(d.entries.map(function(e){ return e.name; }).join(', ')) + ') — looks like a duplicate row. Left as-is, this person would get ' + d.entries.length + ' lockers.');
+        });
+        dup.nameGroups.forEach(function(d){
+          info.push(L + '“' + esc(d.name) + '” appears ' + d.entries.length + ' times with no clock number to tell them apart.');
+        });
+        if (dup.missingClock) info.push(L + plural(dup.missingClock, 'person has', 'people have') + ' no clock number on the list.');
+      }
+      if (layout && state.peopleWb){
+        var c = layoutCounts(layout, rules);
+        var overflow = people.length - c.eligible;
+        if (overflow > 0){
+          blocking.push(L + people.length + ' ' + g.peopleLabel + ' but only ' + c.eligible + ' lockers are in the lottery under the current rules — <strong>' +
+            plural(overflow, 'person', 'people') + ' won’t get a locker</strong>. They’ll be listed as a randomly ordered waiting list.');
+        }
+      }
+    });
+    issues = {blocking: blocking, info: info};
+  }
+
+  function renderIssues(){
+    var key = issues.blocking.join('|');
+    if (key !== state.lastBlockingKey){ els.ack.checked = false; state.lastBlockingKey = key; }
+    if (!issues.blocking.length && !issues.info.length){
+      els.warning.classList.add('hidden');
+      els.warningBody.innerHTML = '';
+      els.ackRow.classList.add('hidden');
+      return;
+    }
+    var html = '';
+    if (issues.blocking.length) html += '<strong>⚠ Check before running the lottery</strong><ul><li>' + issues.blocking.join('</li><li>') + '</li></ul>';
+    if (issues.info.length) html += '<strong>ℹ For information</strong><ul><li>' + issues.info.join('</li><li>') + '</li></ul>';
+    els.warningBody.innerHTML = html;
+    els.ackRow.classList.toggle('hidden', !issues.blocking.length);
+    els.warning.classList.remove('hidden');
+  }
+
+  function blocked(){
+    if (issues.blocking.length && !els.ack.checked){
+      els.warning.scrollIntoView({behavior:'smooth', block:'center'});
       return true;
     }
     return false;
   }
 
-  function populateSheetSelects(){
-    [gentsSheetSelect, ladiesSheetSelect].forEach(function(sel){
-      sel.innerHTML = '';
-      sheetNames.forEach(function(n){
-        var opt = document.createElement('option');
-        opt.value = n; opt.textContent = n;
-        sel.appendChild(opt);
-      });
-    });
-    var ladiesGuess = guessSheet(sheetNames, LADIES_RE);
-    var gentsGuess = guessSheet(sheetNames.filter(function(n){return n!==ladiesGuess;}), GENTS_RE) || sheetNames.filter(function(n){return n!==ladiesGuess;})[0];
-    if (gentsGuess) gentsSheetSelect.value = gentsGuess;
-    if (ladiesGuess) ladiesSheetSelect.value = ladiesGuess;
+  function clearResults(){
+    if (!state.hasResults) return;
+    state.hasResults = false;
+    state.results = {gents:[], ladies:[]};
+    els.resultsCard.classList.add('hidden');
+    els.redrawBtn.classList.add('hidden');
   }
 
-  // ---------- file upload ----------
-  fileInput.addEventListener('change', function(e){
-    var file = e.target.files[0];
+  function maybeAutoRun(){
+    if (!els.instant.checked || !state.layoutWb || !state.peopleWb || state.hasResults) return;
+    if (blocked()) return;
+    runDraw(true);
+  }
+
+  // ---------- file inputs ----------
+  function handleUpload(kind, input, statusEl){
+    var file = input.files[0];
     if (!file) return;
-    uploadStatus.className = '';
-    uploadStatus.textContent = 'Reading file…';
-    var reader = new FileReader();
-    reader.onload = function(evt){
-      try{
-        var data = new Uint8Array(evt.target.result);
-        workbook = XLSX.read(data, {type:'array'});
-        sheetNames = workbook.SheetNames;
-        if (sheetNames.length < 1){
-          throw new Error('No sheets found in this workbook.');
-        }
-        populateSheetSelects();
-        uploadStatus.className = 'ok';
-        uploadStatus.textContent = '✓ Loaded "' + file.name + '" — ' + sheetNames.length + ' tab(s) found.';
-        settingsCard.classList.remove('hidden');
-        drawCard.classList.remove('hidden');
-        refreshDuplicateCheck();
-
-        if (instantModeToggle.checked){
-          if (hasBlockingDuplicates()){
-            duplicateWarningSection.scrollIntoView({behavior:'smooth', block:'center'});
-          } else {
-            runDraw(true);
-          }
-        }
-      }catch(err){
-        uploadStatus.className = 'err';
-        uploadStatus.textContent = '✗ Could not read that file: ' + err.message;
-        settingsCard.classList.add('hidden');
-        drawCard.classList.add('hidden');
+    statusEl.className = 'file-status';
+    statusEl.textContent = 'Reading file…';
+    readWorkbook(file, function(err, wb){
+      if (err || !wb || !wb.SheetNames.length){
+        statusEl.className = 'file-status err';
+        statusEl.textContent = '✗ Could not read that file' + (err ? ': ' + err.message : '.');
+        if (kind === 'layout') state.layoutWb = null; else state.peopleWb = null;
+        clearResults();
+        refreshAll();
+        return;
       }
-    };
-    reader.readAsArrayBuffer(file);
-  });
-
-  // ---------- locker plan builder ----------
-  // actualCount > 0 fixes the locker count to a real physical total (e.g. lockers
-  // actually on site); anyone beyond capacity is appended as a "No locker
-  // available" entry rather than silently dropped. actualCount <= 0 auto-sizes
-  // to exactly fit everyone (the previous behaviour), so it can never overflow.
-  function buildLockerPlan(people, prefix, startNumber, reserveFourth, actualCount){
-    var shuffled = fisherYatesShuffle(people);
-    var bankSize = 4;
-    var totalLockers;
-    if (actualCount > 0){
-      totalLockers = actualCount;
-    } else {
-      var usableSlots = reserveFourth ? 3 : 4;
-      var numBanks = Math.max(1, Math.ceil(shuffled.length / usableSlots));
-      totalLockers = numBanks * bankSize;
-    }
-    var lockers = [];
-    var personIndex = 0;
-    for (var i=0; i<totalLockers; i++){
-      var bank = Math.floor(i / bankSize) + 1;
-      var slot = (i % bankSize) + 1;
-      var lockerNumber = startNumber + i;
-      var isReservedSlot = reserveFourth && slot === bankSize;
-      var person = null;
-      if (!isReservedSlot && personIndex < shuffled.length){
-        person = shuffled[personIndex++];
-      }
-      lockers.push({
-        bank: bank,
-        slot: slot,
-        lockerId: prefix + lockerNumber,
-        person: person,
-        status: person ? 'Assigned' : (isReservedSlot ? 'Unassigned (reserved)' : 'Unassigned (spare)')
-      });
-    }
-    for (; personIndex < shuffled.length; personIndex++){
-      lockers.push({ bank: '—', slot: null, lockerId: '—', person: shuffled[personIndex], status: 'No locker available' });
-    }
-    return lockers;
+      if (kind === 'layout') state.layoutWb = wb; else state.peopleWb = wb;
+      populateSelects(kind);
+      statusEl.className = 'file-status ok';
+      statusEl.textContent = '✓ Loaded “' + file.name + '” — ' + plural(wb.SheetNames.length, 'tab') + ': ' + wb.SheetNames.join(', ');
+      clearResults();
+      refreshAll();
+      maybeAutoRun();
+    });
   }
+  els.layoutInput.addEventListener('change', function(){ handleUpload('layout', els.layoutInput, els.layoutStatus); });
+  els.peopleInput.addEventListener('change', function(){ handleUpload('people', els.peopleInput, els.peopleStatus); });
 
-  // ---------- run draw ----------
-  function computeResults(){
-    var gentsSheet = workbook.Sheets[gentsSheetSelect.value];
-    var ladiesSheet = workbook.Sheets[ladiesSheetSelect.value];
-    var gentsPeople = parsePeopleSheet(gentsSheet);
-    var ladiesPeople = parsePeopleSheet(ladiesSheet);
-    var reserveFourth = reserveFourthToggle.checked;
+  GROUPS.forEach(function(g){
+    selects[g.key].layout.addEventListener('change', function(){ clearResults(); refreshAll(); });
+    selects[g.key].people.addEventListener('change', function(){ clearResults(); refreshAll(); });
+  });
+  [els.ruleTop, els.ruleCorner, els.ruleHalf].forEach(function(cb){
+    cb.addEventListener('change', function(){ clearResults(); refreshAll(); });
+  });
+  els.ack.addEventListener('change', maybeAutoRun);
 
-    drawResults.gents = buildLockerPlan(
-      gentsPeople,
-      document.getElementById('gentsPrefix').value.trim(),
-      parseInt(document.getElementById('gentsStart').value, 10) || 1,
-      reserveFourth,
-      parseInt(gentsLockerCount.value, 10) || 0
-    );
-    drawResults.ladies = buildLockerPlan(
-      ladiesPeople,
-      document.getElementById('ladiesPrefix').value.trim(),
-      parseInt(document.getElementById('ladiesStart').value, 10) || 1,
-      reserveFourth,
-      parseInt(ladiesLockerCount.value, 10) || 0
-    );
+  // ---------- the draw ----------
+  // Shuffles the associates once, then walks the layout in locker order handing
+  // the next person to each locker that's in the lottery. Anyone left over goes
+  // onto the waiting list in their (random) drawn order.
+  function buildDraw(layout, people, rules){
+    var shuffled = shuffle(people);
+    var rows = [], next = 0, prevZone = null, prevCol = null;
+    layout.slots.forEach(function(slot){
+      var cat = categorise(slot, rules);
+      var person = null, status;
+      if (cat === 'eligible'){
+        if (next < shuffled.length){ person = shuffled[next++]; status = STATUS.ASSIGNED; }
+        else status = STATUS.SPARE;
+      } else {
+        status = {top: STATUS.TOP, corner: STATUS.CORNER, half: STATUS.HALF, dummy: STATUS.DUMMY}[cat];
+      }
+      rows.push({
+        lockerNo: slot.lockerNo, zone: slot.zone, position: slot.position, type: lockerType(slot),
+        person: person, status: status, comment: slot.comment,
+        zoneStart: slot.zone !== prevZone,
+        bankStart: slot.zone === prevZone && slot.col !== prevCol
+      });
+      prevZone = slot.zone; prevCol = slot.col;
+    });
+    for (var w = 1; next < shuffled.length; next++, w++){
+      rows.push({lockerNo:null, zone:'', position:'', type:'', person: shuffled[next], status: STATUS.WAIT,
+                 comment: 'Waiting list #' + w, waitPos: w});
+    }
+    return rows;
   }
 
   function runDraw(instant){
-    computeResults();
-    resultsCard.classList.remove('hidden');
-    redrawBtn.classList.remove('hidden');
+    var rules = getRules();
+    GROUPS.forEach(function(g){
+      state.results[g.key] = buildDraw(state.layouts[g.key], state.people[g.key], rules);
+    });
+    state.hasResults = true;
+    els.resultsCard.classList.remove('hidden');
+    els.redrawBtn.classList.remove('hidden');
 
     if (instant){
       renderResults();
-      resultsCard.scrollIntoView({behavior:'smooth', block:'start'});
+      els.resultsCard.scrollIntoView({behavior:'smooth', block:'start'});
       return;
     }
 
-    var allNamesPool = drawResults.gents.map(function(l){return l.person && l.person.name;})
-      .concat(drawResults.ladies.map(function(l){return l.person && l.person.name;}))
-      .filter(Boolean);
-    if (!allNamesPool.length) allNamesPool = ['…'];
-
-    drawAnimation.classList.remove('hidden');
-    runDrawBtn.disabled = true;
+    var pool = state.people.gents.concat(state.people.ladies).map(function(p){ return p.name; });
+    if (!pool.length) pool = ['…'];
+    els.resultsCard.classList.add('hidden');
+    els.drawAnimation.classList.remove('hidden');
+    els.runBtn.disabled = true;
+    els.redrawBtn.disabled = true;
     var ticks = 0;
-    var maxTicks = 22;
-    var interval = setInterval(function(){
-      reelText.innerHTML = allNamesPool[Math.floor(Math.random()*allNamesPool.length)] + '<small>Drawing lockers at random…</small>';
-      ticks++;
-      if (ticks >= maxTicks){
-        clearInterval(interval);
-        drawAnimation.classList.add('hidden');
-        runDrawBtn.disabled = false;
+    var timer = setInterval(function(){
+      els.reelText.innerHTML = esc(pool[Math.floor(Math.random() * pool.length)]) + '<small>Drawing lockers at random…</small>';
+      if (++ticks >= 22){
+        clearInterval(timer);
+        els.drawAnimation.classList.add('hidden');
+        els.runBtn.disabled = false;
+        els.redrawBtn.disabled = false;
+        els.resultsCard.classList.remove('hidden');
         renderResults();
         launchConfetti();
-        resultsCard.scrollIntoView({behavior:'smooth', block:'start'});
+        els.resultsCard.scrollIntoView({behavior:'smooth', block:'start'});
       }
     }, 90);
   }
 
-  gentsSheetSelect.addEventListener('change', refreshDuplicateCheck);
-  ladiesSheetSelect.addEventListener('change', refreshDuplicateCheck);
-  gentsLockerCount.addEventListener('input', refreshDuplicateCheck);
-  ladiesLockerCount.addEventListener('input', refreshDuplicateCheck);
-  reserveFourthToggle.addEventListener('change', refreshDuplicateCheck);
-
-  runDrawBtn.addEventListener('click', function(){
-    if (!workbook){ alert('Please upload an Excel file first.'); return; }
-    if (blockedByDuplicates()) return;
-    runDraw(instantModeToggle.checked);
+  els.runBtn.addEventListener('click', function(){
+    if (!state.layoutWb || !state.peopleWb){ alert('Please upload both the locker layout and the associates list first.'); return; }
+    if (blocked()) return;
+    runDraw(els.instant.checked);
   });
-  redrawBtn.addEventListener('click', function(){
-    if (!confirm('This will generate a brand new random locker order. Continue?')) return;
-    if (blockedByDuplicates()) return;
-    runDraw(instantModeToggle.checked);
+  els.redrawBtn.addEventListener('click', function(){
+    if (!confirm('This will run a brand new lottery and replace the current results. Continue?')) return;
+    if (blocked()) return;
+    runDraw(els.instant.checked);
   });
 
-  // ---------- results rendering ----------
-  var tabGents = document.getElementById('tabGents');
-  var tabLadies = document.getElementById('tabLadies');
-  var searchBox = document.getElementById('searchBox');
-  var statsRow = document.getElementById('statsRow');
-  var resultsBody = document.getElementById('resultsBody');
-
-  tabGents.addEventListener('click', function(){ activeGroup='gents'; setActiveTab(); renderResults(); });
-  tabLadies.addEventListener('click', function(){ activeGroup='ladies'; setActiveTab(); renderResults(); });
-  searchBox.addEventListener('input', function(){ renderResults(); });
+  // ---------- results ----------
+  els.tabGents.addEventListener('click', function(){ activeGroup = 'gents'; setActiveTab(); renderResults(); });
+  els.tabLadies.addEventListener('click', function(){ activeGroup = 'ladies'; setActiveTab(); renderResults(); });
+  els.searchBox.addEventListener('input', renderResults);
 
   function setActiveTab(){
-    tabGents.classList.toggle('active', activeGroup==='gents');
-    tabLadies.classList.toggle('active', activeGroup==='ladies');
+    els.tabGents.classList.toggle('active', activeGroup === 'gents');
+    els.tabLadies.classList.toggle('active', activeGroup === 'ladies');
   }
 
-  function renderStats(){
-    var g = drawResults.gents, l = drawResults.ladies;
-    function count(list, status){ return list.filter(function(x){return x.status === status;}).length; }
-    function countFree(list){ return list.filter(function(x){return x.status.indexOf('Unassigned') === 0;}).length; }
-    var stats = [
-      {num: count(g,'Assigned'), lbl:'Gents assigned'},
-      {num: countFree(g), lbl:'Gents lockers free'},
-      {num: count(l,'Assigned'), lbl:'Ladies assigned'},
-      {num: countFree(l), lbl:'Ladies lockers free'}
+  function countByStatus(rows){
+    var c = {};
+    rows.forEach(function(r){ c[r.status] = (c[r.status] || 0) + 1; });
+    return c;
+  }
+
+  function renderStats(rows){
+    var c = countByStatus(rows);
+    var tiles = [
+      {num: c[STATUS.ASSIGNED] || 0, lbl: 'Assigned'},
+      {num: c[STATUS.TOP] || 0, lbl: 'Unassigned (Top)'}
     ];
-    var gentsOverflow = count(g, 'No locker available');
-    var ladiesOverflow = count(l, 'No locker available');
-    if (gentsOverflow) stats.push({num: gentsOverflow, lbl:'Gents without a locker'});
-    if (ladiesOverflow) stats.push({num: ladiesOverflow, lbl:'Ladies without a locker'});
-    statsRow.innerHTML = stats.map(function(s){
-      return '<div class="stat"><div class="num">'+s.num+'</div><div class="lbl">'+s.lbl+'</div></div>';
+    if (c[STATUS.SPARE]) tiles.push({num: c[STATUS.SPARE], lbl: 'Unassigned (spare)'});
+    tiles.push({num: c[STATUS.CORNER] || 0, lbl: 'Corner'});
+    tiles.push({num: c[STATUS.HALF] || 0, lbl: 'Half size'});
+    tiles.push({num: c[STATUS.DUMMY] || 0, lbl: 'Dummy slots'});
+    if (c[STATUS.WAIT]) tiles.push({num: c[STATUS.WAIT], lbl: 'Waiting list', alert: true});
+    els.statsRow.innerHTML = tiles.map(function(t){
+      return '<div class="stat' + (t.alert ? ' alert' : '') + '"><div class="num">' + t.num + '</div><div class="lbl">' + t.lbl + '</div></div>';
     }).join('');
+  }
+
+  function matchesSearch(r, q){
+    var p = r.person;
+    if (/^\d+$/.test(q)){
+      if (r.lockerNo != null && String(r.lockerNo) === q) return true;
+      return !!(p && p.clockNumber && p.clockNumber.indexOf(q) !== -1);
+    }
+    return !!(p && p.name.toLowerCase().indexOf(q) !== -1) ||
+           (r.zone && r.zone.toLowerCase().indexOf(q) !== -1) ||
+           r.status.toLowerCase().indexOf(q) !== -1;
+  }
+
+  function rowClass(r){
+    switch (r.status){
+      case STATUS.TOP: case STATUS.SPARE: return 'reserved';
+      case STATUS.CORNER: return 'excluded corner';
+      case STATUS.HALF: return 'excluded half';
+      case STATUS.DUMMY: return 'excluded';
+      case STATUS.WAIT: return 'no-locker';
+      default: return '';
+    }
   }
 
   function renderResults(){
-    renderStats();
-    var list = drawResults[activeGroup] || [];
-    var q = searchBox.value.trim().toLowerCase();
-    if (q){
-      list = list.filter(function(l){
-        var p = l.person;
-        return l.lockerId.toLowerCase().indexOf(q) !== -1 ||
-               (p && p.name.toLowerCase().indexOf(q) !== -1) ||
-               (p && p.clockNumber && p.clockNumber.toLowerCase().indexOf(q) !== -1) ||
-               (p && p.index && String(p.index).toLowerCase().indexOf(q) !== -1);
-      });
-    }
-    var rows = list.map(function(l){
-      var isBankStart = l.slot === 1;
-      var isNoLocker = l.status === 'No locker available';
-      var reserved = !l.person && !isNoLocker;
-      var rowClass = (isBankStart?'bank-start ':'') + (reserved?'reserved':'') + (isNoLocker?'no-locker':'');
-      return '<tr class="'+rowClass+'">' +
-        '<td>'+l.lockerId+'</td>' +
-        '<td>'+(l.bank === '—' ? '—' : 'Bank '+l.bank)+'</td>' +
-        '<td>'+(l.person ? l.person.index : '—')+'</td>' +
-        '<td>'+(l.person && l.person.clockNumber ? l.person.clockNumber : '—')+'</td>' +
-        '<td>'+(l.person ? l.person.name : '—')+'</td>' +
-        '<td>'+l.status+'</td>' +
-      '</tr>';
-    }).join('');
-    resultsBody.innerHTML = rows || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">No results to show.</td></tr>';
+    var rows = state.results[activeGroup] || [];
+    renderStats(rows);
+    var q = els.searchBox.value.trim().toLowerCase();
+    if (q) rows = rows.filter(function(r){ return matchesSearch(r, q); });
+
+    var html = [];
+    rows.forEach(function(r){
+      if (!q && r.zoneStart) html.push('<tr class="zone-row"><td colspan="7">' + esc(r.zone) + '</td></tr>');
+      if (!q && r.status === STATUS.WAIT && r.waitPos === 1){
+        html.push('<tr class="zone-row"><td colspan="7">Waiting list — no locker available (in random draw order)</td></tr>');
+      }
+      var p = r.person;
+      var pill = '';
+      if (p && r.type === 'Corner') pill = '<span class="pill corner">Corner</span>';
+      if (p && r.type === 'Half size') pill = '<span class="pill half">Half size</span>';
+      html.push('<tr class="' + (r.bankStart && !q ? 'bank-start ' : '') + rowClass(r) + '">' +
+        '<td>' + (r.lockerNo != null ? r.lockerNo : '—') + pill + '</td>' +
+        '<td>' + esc(r.zone || '—') + '</td>' +
+        '<td>' + esc(r.position || '—') + '</td>' +
+        '<td>' + (p && p.clockNumber ? esc(p.clockNumber) : '—') + '</td>' +
+        '<td>' + (p ? esc(p.name) : '—') + '</td>' +
+        '<td>' + esc(r.status) + '</td>' +
+        '<td class="comment">' + esc(r.comment || '') + '</td>' +
+      '</tr>');
+    });
+    els.resultsBody.innerHTML = html.join('') ||
+      '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">No results to show.</td></tr>';
   }
 
   // ---------- export ----------
-  document.getElementById('exportBtn').addEventListener('click', function(){
-    if (!drawResults.gents.length && !drawResults.ladies.length){
-      alert('Run the draw first.');
-      return;
-    }
-    var wb = XLSX.utils.book_new();
+  // Lockers sheets: A Locker No | B Zone | C Position | D Locker Type | E Clock No |
+  //                 F First Name | G Last Name | H Status | I Comment
+  var SHEET_NAMES = {gents: 'Gents Lockers', ladies: 'Ladies Lockers'};
 
-    function toRows(list){
-      return list.map(function(l){
-        return {
-          'Locker': l.lockerId,
-          'Bank': l.bank,
-          'Index': l.person ? l.person.index : '',
-          'Clock No': l.person ? l.person.clockNumber : '',
-          'Assigned To': l.person ? l.person.name : 'UNASSIGNED',
-          'Status': l.status
-        };
-      });
-    }
+  function clockValue(v){ return /^\d+$/.test(v) ? Number(v) : (v || null); }
 
-    var wsGents = XLSX.utils.json_to_sheet(toRows(drawResults.gents));
-    var wsLadies = XLSX.utils.json_to_sheet(toRows(drawResults.ladies));
-    XLSX.utils.book_append_sheet(wb, wsGents, 'Gents Lockers');
-    XLSX.utils.book_append_sheet(wb, wsLadies, 'Ladies Lockers');
+  function lockerSheet(rows){
+    var aoa = [['Locker No','Zone','Position','Locker Type','Clock No','First Name','Last Name','Status','Comment']];
+    rows.forEach(function(r){
+      var p = r.person;
+      aoa.push([
+        r.status === STATUS.WAIT ? '—' : r.lockerNo,
+        r.zone || null, r.position || null, r.type || null,
+        p ? clockValue(p.clockNumber) : null,
+        p ? (p.firstName || null) : null,
+        p ? (p.lastName || null) : null,
+        r.status, r.comment || null
+      ]);
+    });
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [{wch:10},{wch:22},{wch:14},{wch:12},{wch:10},{wch:14},{wch:16},{wch:20},{wch:70}];
+    ws['!autofilter'] = {ref: 'A1:I' + aoa.length};
+    return ws;
+  }
 
-    // Status column is F on both sheets (Locker, Bank, Index, Clock No, Assigned To, Status).
-    // COUNTIF formulas below are live: editing a Lockers sheet later (e.g. filling in a
-    // name+clock number on a previously "Unassigned" row) and reopening/recalculating in
-    // Excel updates these counts automatically, rather than leaving stale numbers behind.
-    function countByStatus(list, status){ return list.filter(function(x){return x.status === status;}).length; }
-    function countFree(list){ return list.filter(function(x){return x.status.indexOf('Unassigned') === 0;}).length; }
-    var gentsAssigned = countByStatus(drawResults.gents, 'Assigned');
-    var gentsFree = countFree(drawResults.gents);
-    var gentsNoLocker = countByStatus(drawResults.gents, 'No locker available');
-    var ladiesAssigned = countByStatus(drawResults.ladies, 'Assigned');
-    var ladiesFree = countFree(drawResults.ladies);
-    var ladiesNoLocker = countByStatus(drawResults.ladies, 'No locker available');
+  // Each metric's formula and how to get the same number from the in-app rows
+  // (used as the cached value so the file reads correctly even before Excel recalculates).
+  // Counting "has a clock number" rather than Status means HR can later type a new
+  // start's clock number + name onto an Unassigned row and the counts move by themselves.
+  function summaryMetrics(sheetName){
+    var s = "'" + sheetName + "'!";
+    function blankClock(r){ return !r.person; }
+    return [
+      {key:'total',      label:'Total lockers (numbered)',
+       f:'COUNT(' + s + 'A:A)',
+       calc:function(r){ return r.lockerNo != null && r.status !== STATUS.WAIT; }},
+      {key:'assigned',   label:'Assigned (clock number entered)',
+       f:'COUNTIFS(' + s + 'A:A,">0",' + s + 'E:E,"<>")+COUNTIFS(' + s + 'A:A,">0",' + s + 'E:E,"",' + s + 'H:H,"' + STATUS.ASSIGNED + '")',
+       calc:function(r){ return r.lockerNo != null && r.status !== STATUS.WAIT && !!r.person; }},
+      {key:'unassigned', label:'Unassigned / free',
+       f:'COUNTIFS(' + s + 'H:H,"Unassigned*",' + s + 'E:E,"")',
+       calc:function(r){ return r.status.indexOf('Unassigned') === 0 && blankClock(r); }},
+      {key:'top',        label:'   of which Top',
+       f:'COUNTIFS(' + s + 'H:H,"' + STATUS.TOP + '",' + s + 'E:E,"")',
+       calc:function(r){ return r.status === STATUS.TOP && blankClock(r); }},
+      {key:'corner',     label:'Corner (not assigned)',
+       f:'COUNTIFS(' + s + 'H:H,"' + STATUS.CORNER + '",' + s + 'E:E,"")',
+       calc:function(r){ return r.status === STATUS.CORNER && blankClock(r); }},
+      {key:'half',       label:'Half size (not assigned)',
+       f:'COUNTIFS(' + s + 'H:H,"' + STATUS.HALF + '",' + s + 'E:E,"")',
+       calc:function(r){ return r.status === STATUS.HALF && blankClock(r); }},
+      {key:'dummy',      label:'Dummy slots',
+       f:'COUNTIF(' + s + 'H:H,"' + STATUS.DUMMY + '")',
+       calc:function(r){ return r.status === STATUS.DUMMY; }},
+      {key:'waiting',    label:'Associates on the waiting list',
+       f:'COUNTIF(' + s + 'H:H,"' + STATUS.WAIT + '")',
+       calc:function(r){ return r.status === STATUS.WAIT; }}
+    ];
+  }
 
-    function setFormula(ws, row, col, formula, cachedValue){
-      ws[XLSX.utils.encode_cell({r: row, c: col})] = { t: 'n', f: formula, v: cachedValue };
-    }
+  function setFormula(ws, row, col, formula, cached, fmt){
+    var cell = {t: typeof cached === 'string' ? 's' : 'n', f: formula, v: cached};
+    if (fmt) cell.z = fmt;
+    ws[XLSX.utils.encode_cell({r: row, c: col})] = cell;
+  }
 
-    var summaryRows = [
+  // Builds the Summary sheet and returns, for each group+metric, the Excel row it
+  // landed on plus its value — the Dashboard references those rows rather than
+  // hard-coded cell addresses, so the two sheets can't drift out of line.
+  function buildSummary(rules){
+    var aoa = [
       ['Metric', 'Value'],
-      ['Draw date', new Date().toLocaleString()],
-      ['4th-locker reserved rule', reserveFourthToggle.checked ? 'On' : 'Off'],
-      ['', ''],
-      ['GENTS', ''],
-      ['Gents total lockers', 0],
-      ['Gents assigned', 0],
-      ['Gents remaining (free) lockers', 0],
-      ['Gents people without a locker', 0],
-      ['', ''],
-      ['LADIES', ''],
-      ['Ladies total lockers', 0],
-      ['Ladies assigned', 0],
-      ['Ladies remaining (free) lockers', 0],
-      ['Ladies people without a locker', 0]
+      ['Lottery run', new Date().toLocaleString()],
+      ['Rules', 'Top unassigned: ' + (rules.top ? 'Yes' : 'No') +
+                ' · Corner excluded: ' + (rules.corner ? 'Yes' : 'No') +
+                ' · Half size excluded: ' + (rules.half ? 'Yes' : 'No')]
     ];
-    var wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
-    setFormula(wsSummary, 5, 1, "COUNTIF('Gents Lockers'!F:F,\"Assigned\")+COUNTIF('Gents Lockers'!F:F,\"Unassigned*\")", gentsAssigned + gentsFree);
-    setFormula(wsSummary, 6, 1, "COUNTIF('Gents Lockers'!F:F,\"Assigned\")", gentsAssigned);
-    setFormula(wsSummary, 7, 1, "COUNTIF('Gents Lockers'!F:F,\"Unassigned*\")", gentsFree);
-    setFormula(wsSummary, 8, 1, "COUNTIF('Gents Lockers'!F:F,\"No locker available\")", gentsNoLocker);
-    setFormula(wsSummary, 11, 1, "COUNTIF('Ladies Lockers'!F:F,\"Assigned\")+COUNTIF('Ladies Lockers'!F:F,\"Unassigned*\")", ladiesAssigned + ladiesFree);
-    setFormula(wsSummary, 12, 1, "COUNTIF('Ladies Lockers'!F:F,\"Assigned\")", ladiesAssigned);
-    setFormula(wsSummary, 13, 1, "COUNTIF('Ladies Lockers'!F:F,\"Unassigned*\")", ladiesFree);
-    setFormula(wsSummary, 14, 1, "COUNTIF('Ladies Lockers'!F:F,\"No locker available\")", ladiesNoLocker);
-    XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+    var refs = {}, formulas = [];
+    GROUPS.forEach(function(g){
+      aoa.push(['', '']);
+      aoa.push([g.label.toUpperCase(), '']);
+      refs[g.key] = {};
+      summaryMetrics(SHEET_NAMES[g.key]).forEach(function(m){
+        var value = state.results[g.key].filter(m.calc).length;
+        var rowIndex = aoa.length;
+        aoa.push([g.label + ' – ' + m.label.trim(), value]);
+        refs[g.key][m.key] = {row: rowIndex + 1, value: value};
+        formulas.push({row: rowIndex, f: m.f, v: value});
+      });
+    });
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    formulas.forEach(function(x){ setFormula(ws, x.row, 1, x.f, x.v); });
+    ws['!cols'] = [{wch:42}, {wch:70}];
+    return {ws: ws, refs: refs};
+  }
 
-    // Dashboard: a simple live view built only from formulas + number formats. The free,
-    // client-side Excel library this tool uses can't write native charts or cell colors,
-    // so this uses a text block-bar (via REPT) instead of a real chart — but the numbers
-    // and bars stay live off the Summary sheet's formulas. Select the table below and use
-    // Excel's own Insert > Chart for a real chart in a couple of clicks if you want one.
-    var dashRows = [
-      ['Changing Room Locker Draw — Dashboard', '', '', '', ''],
-      ['', '', '', '', ''],
-      ['Group', 'Total', 'Assigned', 'Remaining', '% Assigned', 'Visual'],
-      ['Gents', 0, 0, 0, 0, ''],
-      ['Ladies', 0, 0, 0, 0, '']
+  function buildDashboard(refs){
+    var aoa = [
+      ['Changing Room Locker Lottery — Dashboard'],
+      [],
+      ['Group','Total lockers','Assigned','Unassigned','Corner + Half size','Waiting list','% lockers assigned','Visual'],
+      ['Gents'], ['Ladies'],
+      [],
+      ['Figures update automatically: enter a clock number (and name) on an Unassigned row of a Lockers tab and Assigned / Unassigned recalculate.']
     ];
-    var wsDash = XLSX.utils.aoa_to_sheet(dashRows);
-    [ ['Gents', 3, gentsAssigned, gentsFree], ['Ladies', 4, ladiesAssigned, ladiesFree] ].forEach(function(pair){
-      var groupLabel = pair[0], row = pair[1], assigned = pair[2], free = pair[3];
-      var total = assigned + free;
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    GROUPS.forEach(function(g, i){
+      var row = 3 + i, xr = row + 1, R = refs[g.key];
+      function ref(k){ return 'Summary!B' + R[k].row; }
+      var total = R.total.value, assigned = R.assigned.value;
       var pct = total ? assigned / total : 0;
       var filled = Math.round(pct * 20);
-      var barText = new Array(filled + 1).join('█') + new Array(20 - filled + 1).join('░');
-
-      setFormula(wsDash, row, 1, 'Summary!B' + (groupLabel === 'Gents' ? 6 : 12), total);
-      setFormula(wsDash, row, 2, 'Summary!B' + (groupLabel === 'Gents' ? 7 : 13), assigned);
-      setFormula(wsDash, row, 3, 'Summary!B' + (groupLabel === 'Gents' ? 8 : 14), free);
-      var pctCell = XLSX.utils.encode_cell({r: row, c: 4});
-      wsDash[pctCell] = { t: 'n', z: '0%', f: 'IF(B' + (row+1) + '=0,0,C' + (row+1) + '/B' + (row+1) + ')', v: pct };
-      var barCell = XLSX.utils.encode_cell({r: row, c: 5});
-      wsDash[barCell] = { t: 's', f: 'REPT("█",ROUND(E' + (row+1) + '*20,0))&REPT("░",20-ROUND(E' + (row+1) + '*20,0))', v: barText };
+      setFormula(ws, row, 1, ref('total'), total);
+      setFormula(ws, row, 2, ref('assigned'), assigned);
+      setFormula(ws, row, 3, ref('unassigned'), R.unassigned.value);
+      setFormula(ws, row, 4, ref('corner') + '+' + ref('half'), R.corner.value + R.half.value);
+      setFormula(ws, row, 5, ref('waiting'), R.waiting.value);
+      setFormula(ws, row, 6, 'IF(B' + xr + '=0,0,C' + xr + '/B' + xr + ')', pct, '0%');
+      setFormula(ws, row, 7, 'REPT("█",ROUND(G' + xr + '*20,0))&REPT("░",20-ROUND(G' + xr + '*20,0))',
+                 new Array(filled + 1).join('█') + new Array(21 - filled).join('░'));
     });
-    wsDash['!cols'] = [{wch:10},{wch:8},{wch:9},{wch:10},{wch:11},{wch:24}];
-    XLSX.utils.book_append_sheet(wb, wsDash, 'Dashboard');
+    ws['!cols'] = [{wch:10},{wch:13},{wch:10},{wch:11},{wch:17},{wch:12},{wch:18},{wch:24}];
+    return ws;
+  }
 
-    var dateStr = new Date().toISOString().slice(0,10);
-    XLSX.writeFile(wb, 'Locker_Draw_Results_' + dateStr + '.xlsx');
+  $('exportBtn').addEventListener('click', function(){
+    if (!state.hasResults){ alert('Run the lottery first.'); return; }
+    var wb = XLSX.utils.book_new();
+    GROUPS.forEach(function(g){
+      XLSX.utils.book_append_sheet(wb, lockerSheet(state.results[g.key]), SHEET_NAMES[g.key]);
+    });
+    var summary = buildSummary(getRules());
+    XLSX.utils.book_append_sheet(wb, summary.ws, 'Summary');
+    XLSX.utils.book_append_sheet(wb, buildDashboard(summary.refs), 'Dashboard');
+    XLSX.writeFile(wb, 'Locker_Lottery_Results_' + new Date().toISOString().slice(0,10) + '.xlsx');
   });
 
   // ---------- confetti ----------
   function launchConfetti(){
-    var canvas = document.getElementById('confettiCanvas');
+    var canvas = $('confettiCanvas');
     canvas.style.display = 'block';
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -906,7 +1129,6 @@
     var start = Date.now();
     function frame(){
       ctx.clearRect(0,0,canvas.width,canvas.height);
-      var elapsed = Date.now() - start;
       particles.forEach(function(p){
         p.x += p.vx; p.y += p.vy; p.rot += p.vrot;
         ctx.save();
@@ -916,12 +1138,8 @@
         ctx.fillRect(-p.r/2, -p.r/2, p.r, p.r*1.6);
         ctx.restore();
       });
-      if (elapsed < 2600){
-        requestAnimationFrame(frame);
-      } else {
-        canvas.style.display = 'none';
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-      }
+      if (Date.now() - start < 2600) requestAnimationFrame(frame);
+      else { canvas.style.display = 'none'; ctx.clearRect(0,0,canvas.width,canvas.height); }
     }
     frame();
   }
