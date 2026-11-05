@@ -199,6 +199,54 @@
   .pill.half{background:#fdf0cc;color:#6b4d00;}
   .table-wrap{max-height:600px;overflow:auto;border:1px solid var(--panel-border);border-radius:8px;}
 
+  /* ---------- Results bar / view switch ---------- */
+  .results-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+  .results-bar .tabs{margin-bottom:0;}
+  .view-toggle{display:inline-flex;border:1px solid var(--panel-border);border-radius:8px;overflow:hidden;}
+  .view-toggle button{border:none;background:#fff;padding:8px 16px;font-weight:600;font-size:.86rem;color:var(--text-muted);cursor:pointer;}
+  .view-toggle button + button{border-left:1px solid var(--panel-border);}
+  .view-toggle button.active{background:var(--charcoal);color:#fff;}
+
+  /* ---------- Locker room map ---------- */
+  .map-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.8rem;color:var(--text-muted);margin:0 0 10px;}
+  .map-legend span{display:inline-flex;align-items:center;gap:6px;}
+  .map-legend i{display:inline-block;width:18px;height:14px;border-radius:3px;border:1.5px solid #cfc8c2;}
+  .map-note{font-size:.84rem;color:var(--text-muted);margin:0 0 12px;}
+  .map-note.alert{color:#7a1226;font-weight:600;}
+  .map-detail{position:sticky;top:0;z-index:2;background:#fff;border:1px solid var(--panel-border);border-left:4px solid var(--brand-red);
+    border-radius:8px;padding:10px 14px;font-size:.88rem;margin-bottom:14px;min-height:42px;box-shadow:0 2px 6px rgba(0,0,0,.05);}
+  .map-detail .muted{color:var(--text-muted);}
+  .map-zones{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;}
+  .zone-card{border:1px solid var(--panel-border);border-radius:10px;padding:12px 14px 14px;background:#fcfbfa;max-width:100%;overflow-x:auto;}
+  .zone-card h4{margin:0 0 2px;font-size:.9rem;color:var(--charcoal);white-space:nowrap;}
+  .zone-card .zone-counts{font-size:.74rem;color:var(--text-muted);margin-bottom:10px;white-space:nowrap;}
+  .zone-grid{display:grid;gap:4px;align-items:stretch;}
+  .row-label{font-size:.68rem;color:var(--text-muted);display:flex;align-items:center;justify-content:flex-end;padding-right:6px;white-space:nowrap;}
+  .lk{width:52px;height:44px;border-radius:5px;border:1.5px solid #cfc8c2;background:#fff;color:var(--charcoal);
+    font:inherit;padding:3px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;}
+  button.lk{cursor:pointer;transition:transform .08s;}
+  button.lk:hover{transform:translateY(-1px);}
+  button.lk:focus-visible{outline:3px solid var(--brand-red);outline-offset:1px;}
+  .lk .no{font-size:.78rem;font-weight:700;}
+  .lk .who{font-size:.62rem;opacity:.85;max-width:48px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .lk.assigned{background:var(--charcoal);border-color:var(--charcoal);color:#fff;}
+  .lk.assigned.t-corner{box-shadow:inset 0 -5px 0 var(--corner);}
+  .lk.assigned.t-half{box-shadow:inset 0 -5px 0 var(--half);}
+  .lk.top{border-style:dashed;color:var(--text-muted);}
+  .lk.spare{background:#eef7f2;border:1.5px dashed var(--ok);color:#1d6b48;}
+  .lk.corner{background:#fbe1e3;border-color:var(--corner);color:#8a1f26;}
+  .lk.half{background:#fdf0cc;border-color:var(--half);color:#6b4d00;}
+  .lk.dummy{background:repeating-linear-gradient(45deg,#ece8e4 0 4px,#f8f6f4 4px 8px);border-color:#e3ded9;color:#a49b94;}
+  .lk.none{visibility:hidden;}
+  .lk.dim{opacity:.22;}
+  .lk.match, .lk.selected{outline:3px solid var(--brand-red);outline-offset:1px;}
+  .map-legend i.assigned{background:var(--charcoal);border-color:var(--charcoal);}
+  .map-legend i.top{border-style:dashed;background:#fff;}
+  .map-legend i.spare{background:#eef7f2;border:1.5px dashed var(--ok);}
+  .map-legend i.corner{background:#fbe1e3;border-color:var(--corner);}
+  .map-legend i.half{background:#fdf0cc;border-color:var(--half);}
+  .map-legend i.dummy{background:repeating-linear-gradient(45deg,#ece8e4 0 3px,#f8f6f4 3px 6px);border-color:#e3ded9;}
+
   footer{text-align:center;color:var(--text-muted);font-size:.8rem;margin-top:30px;}
 </style>
 </head>
@@ -312,16 +360,35 @@
 
     <section id="results-card" class="card hidden">
       <h2>4. Results</h2>
-      <div class="tabs">
-        <button class="tab-btn active" id="tabGents">Gents</button>
-        <button class="tab-btn" id="tabLadies">Ladies</button>
+      <div class="results-bar">
+        <div class="tabs">
+          <button class="tab-btn active" id="tabGents">Gents</button>
+          <button class="tab-btn" id="tabLadies">Ladies</button>
+        </div>
+        <div class="view-toggle" role="group" aria-label="Results view">
+          <button id="viewMapBtn" class="active" aria-pressed="true">🗺 Map</button>
+          <button id="viewListBtn" aria-pressed="false">☰ List</button>
+        </div>
       </div>
       <div class="stats-row" id="statsRow"></div>
       <div class="search-export">
         <input type="text" id="searchBox" placeholder="Search by name, clock number or locker number…">
         <button class="btn-secondary" id="exportBtn">⬇ Export to Excel</button>
       </div>
-      <div class="table-wrap">
+      <div id="mapView">
+        <div class="map-legend">
+          <span><i class="assigned"></i>Assigned</span>
+          <span><i class="top"></i>Unassigned (Top)</span>
+          <span><i class="spare"></i>Unassigned (spare)</span>
+          <span><i class="corner"></i>Corner</span>
+          <span><i class="half"></i>Half size</span>
+          <span><i class="dummy"></i>Dummy slot</span>
+        </div>
+        <p class="map-note" id="mapNote"></p>
+        <div class="map-detail" id="mapDetail"></div>
+        <div class="map-zones" id="mapZones"></div>
+      </div>
+      <div class="table-wrap hidden" id="listView">
         <table>
           <thead>
             <tr><th>Locker</th><th>Zone</th><th>Position</th><th>Clock No</th><th>Name</th><th>Status</th><th>Comment</th></tr>
@@ -822,6 +889,7 @@
       }
       rows.push({
         lockerNo: slot.lockerNo, zone: slot.zone, position: slot.position, type: lockerType(slot),
+        col: slot.col, posIndex: slot.posIndex,
         person: person, status: status, comment: slot.comment,
         zoneStart: slot.zone !== prevZone,
         bankStart: slot.zone === prevZone && slot.col !== prevCol
@@ -841,6 +909,7 @@
       state.results[g.key] = buildDraw(state.layouts[g.key], state.people[g.key], rules);
     });
     state.hasResults = true;
+    selectedIndex = -1;
     els.resultsCard.classList.remove('hidden');
     els.redrawBtn.classList.remove('hidden');
 
@@ -884,9 +953,131 @@
   });
 
   // ---------- results ----------
-  els.tabGents.addEventListener('click', function(){ activeGroup = 'gents'; setActiveTab(); renderResults(); });
-  els.tabLadies.addEventListener('click', function(){ activeGroup = 'ladies'; setActiveTab(); renderResults(); });
-  els.searchBox.addEventListener('input', renderResults);
+  var view = 'map';
+  var mapEls = {view: $('mapView'), list: $('listView'), zones: $('mapZones'), note: $('mapNote'), detail: $('mapDetail'),
+                mapBtn: $('viewMapBtn'), listBtn: $('viewListBtn')};
+  var mapRows = [], selectedIndex = -1;
+  var MAP_DETAIL_HINT = '<span class="muted">Click a locker to see who’s in it.</span>';
+
+  els.tabGents.addEventListener('click', function(){ activeGroup = 'gents'; selectedIndex = -1; setActiveTab(); renderResults(); });
+  els.tabLadies.addEventListener('click', function(){ activeGroup = 'ladies'; selectedIndex = -1; setActiveTab(); renderResults(); });
+  els.searchBox.addEventListener('input', function(){ renderResults(true); });
+
+  function setView(v){
+    view = v;
+    mapEls.mapBtn.classList.toggle('active', v === 'map');
+    mapEls.listBtn.classList.toggle('active', v === 'list');
+    mapEls.mapBtn.setAttribute('aria-pressed', v === 'map');
+    mapEls.listBtn.setAttribute('aria-pressed', v === 'list');
+    mapEls.view.classList.toggle('hidden', v !== 'map');
+    mapEls.list.classList.toggle('hidden', v !== 'list');
+    renderResults();
+  }
+  mapEls.mapBtn.addEventListener('click', function(){ setView('map'); });
+  mapEls.listBtn.addEventListener('click', function(){ setView('list'); });
+
+  mapEls.zones.addEventListener('click', function(e){
+    var btn = e.target.closest('button.lk');
+    if (!btn) return;
+    selectedIndex = Number(btn.getAttribute('data-i'));
+    var prev = mapEls.zones.querySelector('.lk.selected');
+    if (prev) prev.classList.remove('selected');
+    btn.classList.add('selected');
+    mapEls.detail.innerHTML = describeLocker(mapRows[selectedIndex]);
+  });
+
+  function describeLocker(r){
+    var where = esc(r.zone) + ' · ' + esc(r.position);
+    var head = '<strong>Locker ' + r.lockerNo + '</strong> · ' + where;
+    if (r.person){
+      var typeNote = r.type !== 'Standard' ? ' <span class="pill ' + (r.type === 'Corner' ? 'corner' : 'half') + '">' + esc(r.type) + '</span>' : '';
+      return head + typeNote + ' — assigned to <strong>' + esc(r.person.name) + '</strong>' +
+             (r.person.clockNumber ? ' (clock no. ' + esc(r.person.clockNumber) + ')' : '');
+    }
+    var what = {};
+    what[STATUS.TOP] = 'Unassigned — Top lockers are kept free for new starts.';
+    what[STATUS.SPARE] = 'Unassigned — spare locker (more lockers than people).';
+    what[STATUS.CORNER] = 'Corner locker — not in the lottery.';
+    what[STATUS.HALF] = 'Half size locker — not in the lottery.';
+    return head + ' — ' + (what[r.status] || esc(r.status)) +
+           (r.comment ? '<br><span class="muted">' + esc(r.comment) + '</span>' : '');
+  }
+
+  var MAP_CLASS = {};
+  MAP_CLASS[STATUS.ASSIGNED] = 'assigned';
+  MAP_CLASS[STATUS.TOP] = 'top';
+  MAP_CLASS[STATUS.SPARE] = 'spare';
+  MAP_CLASS[STATUS.CORNER] = 'corner';
+  MAP_CLASS[STATUS.HALF] = 'half';
+  var MAP_SUB = {top: 'free', spare: 'spare', corner: 'corner', half: 'half'};
+  var ROW_LABELS = ['Top', 'Mid Top', 'Mid Bottom', 'Bottom'];
+
+  // Draws each zone as it appears on the Facilities sheet: one column per bank,
+  // Top to Bottom. A position with no slot on the sheet is left as a gap.
+  function renderMap(rows, q, scrollToMatch){
+    mapRows = rows;
+    var zones = [], byZone = {};
+    rows.forEach(function(r, i){
+      if (r.status === STATUS.WAIT) return;
+      var z = byZone[r.zone];
+      if (!z){ z = byZone[r.zone] = {name: r.zone, cols: [], byCol: {}, assigned: 0, free: 0}; zones.push(z); }
+      var col = z.byCol[r.col];
+      if (!col){ col = z.byCol[r.col] = [null, null, null, null]; z.cols.push(col); }
+      col[r.posIndex] = {row: r, i: i};
+      if (r.status === STATUS.ASSIGNED) z.assigned++;
+      if (r.status === STATUS.TOP || r.status === STATUS.SPARE) z.free++;
+    });
+
+    var matches = 0;
+    var html = zones.map(function(z){
+      var cells = [];
+      for (var p = 0; p < 4; p++){
+        cells.push('<div class="row-label">' + ROW_LABELS[p] + '</div>');
+        z.cols.forEach(function(col){
+          var item = col[p];
+          if (!item){ cells.push('<div class="lk none"></div>'); return; }
+          var r = item.row;
+          if (r.status === STATUS.DUMMY){
+            cells.push('<div class="lk dummy' + (q ? ' dim' : '') + '" title="Dummy slot — not a locker">–</div>');
+            return;
+          }
+          var cls = MAP_CLASS[r.status] || '';
+          if (r.person && r.type === 'Corner') cls += ' t-corner';
+          if (r.person && r.type === 'Half size') cls += ' t-half';
+          if (q){
+            if (matchesSearch(r, q)){ cls += ' match'; matches++; } else cls += ' dim';
+          }
+          if (item.i === selectedIndex) cls += ' selected';
+          var sub = r.person ? (r.person.clockNumber || r.person.name) : MAP_SUB[cls.split(' ')[0]] || '';
+          var label = 'Locker ' + r.lockerNo + ', ' + r.position + ': ' +
+                      (r.person ? 'assigned to ' + r.person.name + (r.person.clockNumber ? ' (' + r.person.clockNumber + ')' : '') : r.status);
+          cells.push('<button type="button" class="lk ' + cls + '" data-i="' + item.i + '" title="' + esc(label) + '" aria-label="' + esc(label) + '">' +
+                     '<span class="no">' + r.lockerNo + '</span><span class="who">' + esc(sub) + '</span></button>');
+        });
+      }
+      return '<section class="zone-card"><h4>' + esc(z.name) + '</h4>' +
+             '<div class="zone-counts">' + z.assigned + ' assigned · ' + z.free + ' unassigned</div>' +
+             '<div class="zone-grid" style="grid-template-columns:auto repeat(' + z.cols.length + ', 52px)">' + cells.join('') + '</div></section>';
+    }).join('');
+    mapEls.zones.innerHTML = html || '<p class="hint">No lockers to show.</p>';
+
+    var waiting = rows.filter(function(r){ return r.status === STATUS.WAIT; });
+    var notes = [];
+    if (q){
+      var waitHits = waiting.filter(function(r){ return matchesSearch(r, q); });
+      notes.push(plural(matches, 'locker matches', 'lockers match') + ' “' + esc(q) + '”' +
+                 (waitHits.length ? ' · ' + plural(waitHits.length, 'match is', 'matches are') + ' on the waiting list (see List view)' : ''));
+    }
+    if (waiting.length) notes.push(plural(waiting.length, 'person is', 'people are') + ' on the waiting list — shown in the List view.');
+    mapEls.note.innerHTML = notes.join('<br>');
+    mapEls.note.className = 'map-note' + (q && !matches ? ' alert' : '');
+
+    if (selectedIndex === -1 || !mapRows[selectedIndex]) mapEls.detail.innerHTML = MAP_DETAIL_HINT;
+    if (q && matches && scrollToMatch){
+      var first = mapEls.zones.querySelector('.lk.match');
+      if (first) first.scrollIntoView({behavior:'smooth', block:'nearest', inline:'nearest'});
+    }
+  }
 
   function setActiveTab(){
     els.tabGents.classList.toggle('active', activeGroup === 'gents');
@@ -937,10 +1128,11 @@
     }
   }
 
-  function renderResults(){
+  function renderResults(scrollToMatch){
     var rows = state.results[activeGroup] || [];
     renderStats(rows);
     var q = els.searchBox.value.trim().toLowerCase();
+    if (view === 'map'){ renderMap(rows, q, scrollToMatch === true); return; }
     if (q) rows = rows.filter(function(r){ return matchesSearch(r, q); });
 
     var html = [];

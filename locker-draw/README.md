@@ -54,6 +54,23 @@ Other checks before the draw: the same clock number appearing twice (blocks
 until acknowledged), duplicate locker numbers on the layout, and any fill
 colour that isn't the red/amber key.
 
+## Locker room map
+
+Results open on a **Map** of each changing room (switch to **List** for the
+table). Every zone is drawn the way it's laid out on the Facilities sheet: one
+column per bank of four, Top to Bottom, with each locker coloured by status —
+assigned (dark, showing the clock number), unassigned Top (dashed), spare
+(green dashed), Corner (red), Half size (amber) and dummy slots (hatched).
+
+- Click a locker to see who's in it, or why it isn't in the lottery.
+- Searching by name, clock number or locker number highlights the matching
+  lockers on the map and fades the rest.
+- The waiting list isn't on the map (those people have no locker); it's in
+  the List view.
+
+Zones are shown in the order they appear on the sheet — the map reflects each
+zone's own layout, not where the zones sit relative to each other in the room.
+
 ## The Excel export
 
 - **Gents Lockers** / **Ladies Lockers** — every locker in layout order:
